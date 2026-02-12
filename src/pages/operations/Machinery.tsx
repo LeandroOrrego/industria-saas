@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Settings, Tool, AlertTriangle, Calendar, PenTool, History } from 'lucide-react';
+import { Plus, Search, Settings, Wrench, AlertTriangle, Calendar, PenTool, History } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Database } from '../../types/supabase';
 import MachineryModal from '../../components/MachineryModal';
@@ -49,7 +49,7 @@ export default function Machinery() {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'active': return <span className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-bold uppercase">Operativa</span>;
-            case 'maintenance': return <span className="px-2 py-1 rounded bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 text-xs font-bold uppercase flex items-center gap-1"><Tool size={12} /> Mantenimiento</span>;
+            case 'maintenance': return <span className="px-2 py-1 rounded bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 text-xs font-bold uppercase flex items-center gap-1"><Wrench size={12} /> Mantenimiento</span>;
             case 'repair': return <span className="px-2 py-1 rounded bg-red-500/10 text-red-500 border border-red-500/20 text-xs font-bold uppercase flex items-center gap-1"><AlertTriangle size={12} /> Reparación</span>;
             default: return <span className="px-2 py-1 rounded bg-zinc-800 text-zinc-500 border border-zinc-700 text-xs font-bold uppercase">Fuera de Servicio</span>;
         }
@@ -121,8 +121,8 @@ export default function Machinery() {
                                         <Calendar size={12} /> Prox. Mantenimiento:
                                     </span>
                                     <span className={`font-mono font-bold ${machine.next_maintenance_date && new Date(machine.next_maintenance_date) < new Date()
-                                            ? 'text-red-400'
-                                            : 'text-zinc-300'
+                                        ? 'text-red-400'
+                                        : 'text-zinc-300'
                                         }`}>
                                         {machine.next_maintenance_date ? new Date(machine.next_maintenance_date).toLocaleDateString() : '-'}
                                     </span>

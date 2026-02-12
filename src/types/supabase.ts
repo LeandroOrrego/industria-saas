@@ -442,5 +442,85 @@ export interface Database {
                     created_at?: string
                 }
             }
+            machines: {
+                Row: {
+                    id: string
+                    organization_id: string
+                    name: string
+                    brand: string | null
+                    model: string | null
+                    serial_number: string | null
+                    purchase_date: string | null
+                    warranty_expiry: string | null
+                    next_maintenance_date: string | null
+                    last_maintenance_date: string | null
+                    status: 'active' | 'maintenance' | 'repair' | 'out_of_service'
+                    notes: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    organization_id?: string
+                    name: string
+                    brand?: string | null
+                    model?: string | null
+                    serial_number?: string | null
+                    purchase_date?: string | null
+                    warranty_expiry?: string | null
+                    next_maintenance_date?: string | null
+                    last_maintenance_date?: string | null
+                    status?: 'active' | 'maintenance' | 'repair' | 'out_of_service'
+                    notes?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    organization_id?: string
+                    name?: string
+                    brand?: string | null
+                    model?: string | null
+                    serial_number?: string | null
+                    purchase_date?: string | null
+                    warranty_expiry?: string | null
+                    next_maintenance_date?: string | null
+                    last_maintenance_date?: string | null
+                    status?: 'active' | 'maintenance' | 'repair' | 'out_of_service'
+                    notes?: string | null
+                    created_at?: string
+                }
+            }
+            work_logs: {
+                Row: {
+                    id: string
+                    os_id: string
+                    user_id: string
+                    task_name: string
+                    start_time: string
+                    end_time: string | null
+                    notes: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    os_id: string
+                    user_id: string
+                    task_name: string
+                    start_time: string
+                    end_time?: string | null
+                    notes?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    os_id?: string
+                    user_id?: string
+                    task_name?: string
+                    start_time?: string
+                    end_time?: string | null
+                    notes?: string | null
+                    created_at?: string
+                }
+            }
         }
     }
+}

@@ -30,7 +30,7 @@ export default function HelpCenter() {
 
                 <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
                     <h4 className="font-bold text-white mb-2">¿Cómo crear un nuevo usuario?</h4>
-                    <p className="text-sm text-zinc-400">Ve a Datos Maestros > Roles y haz clic en "Nuevo Usuario". Asegúrate de tener los permisos de administrador.</p>
+                    <p className="text-sm text-zinc-400">Ve a Datos Maestros &gt; Roles y haz clic en "Nuevo Usuario". Asegúrate de tener los permisos de administrador.</p>
                 </div>
                 <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
                     <h4 className="font-bold text-white mb-2">¿Cómo imprimo una factura?</h4>

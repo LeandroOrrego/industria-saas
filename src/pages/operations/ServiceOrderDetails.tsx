@@ -274,6 +274,7 @@ export default function ServiceOrderDetails() {
                 if (laborCost > 0) {
                     invoiceLines.push({
                         invoice_id: invoice.id,
+                        os_item_id: null as any,
                         description: 'Mano de Obra / Servicios',
                         quantity: 1,
                         unit_price: laborCost

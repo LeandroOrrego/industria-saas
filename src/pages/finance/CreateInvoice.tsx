@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { ArrowLeft, CheckCircle, Printer, Download, Search, RefreshCw, FileText } from 'lucide-react';
 import { Database } from '../../types/supabase';
@@ -8,6 +8,8 @@ type ServiceOrder = Database['public']['Tables']['service_orders']['Row'] & { cl
 
 export default function CreateInvoice() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const importedOsId = searchParams.get('os_id');
     const [loading, setLoading] = useState(false);
 
     // Config
