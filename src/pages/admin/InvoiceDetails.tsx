@@ -394,49 +394,141 @@ export default function InvoiceDetails() {
                         )}
                     </div>
                 ) : (
-                    // --- PRE-PRINTED MODE ---
-                    <div className="relative h-full text-sm font-mono leading-relaxed" style={{ fontFamily: '"Courier New", Courier, monospace' }}>
+                    // --- PRE-PRINTED MODE (Tornería Cezemer Layout) ---
+                    <div className="relative h-full text-sm font-mono leading-relaxed print:text-black" style={{ fontFamily: '"Courier New", Courier, monospace' }}>
 
-                        {/* Date */}
-                        <div className="absolute top-[40mm] left-[130mm] w-[60mm]">
-                            <span>{new Date(invoice.created_at).toLocaleDateString()}</span>
+                        {/* --- HEADER --- */}
+                        {/* Fecha: [Dia] de [Mes] de [Año] */}
+                        <div className="absolute top-[42mm] left-[140mm] flex gap-8">
+                            <span className="w-[10mm] text-center">{new Date(invoice.created_at).getDate()}</span>
+                            <span className="w-[30mm] text-center">{new Date(invoice.created_at).toLocaleString('es-PY', { month: 'long' })}</span>
+                            <span className="w-[15mm] text-center">{new Date(invoice.created_at).getFullYear().toString().slice(-2)}</span>
                         </div>
 
-                        {/* Client Info */}
-                        <div className="absolute top-[55mm] left-[20mm] w-[150mm] space-y-[4mm]">
-                            <div className="flex">
-                                <span className="w-[20mm]"></span>
-                                <span className="uppercase font-bold">{invoice.clients?.name}</span>
+                        {/* Condición de Venta (Checkboxes) - Approx location */}
+                        <div className="absolute top-[67mm] left-[155mm] flex gap-[25mm]">
+                            <span className="font-bold">{invoice.condition === 'contado' ? 'X' : ''}</span>
+                            <span className="font-bold">{invoice.condition === 'credito' ? 'X' : ''}</span>
+                        </div>
+
+
+                        {/* --- CLIENT INFO --- */}
+                        <div className="absolute top-[52mm] left-[25mm] w-[180mm] space-y-[4mm] text-xs">
+                            {/* Razón Social */}
+                            <div className="absolute top-[0mm] left-[0mm] w-[100mm] uppercase">
+                                {invoice.clients?.name}
                             </div>
-                            <div className="flex">
-                                <span className="w-[20mm]"></span>
-                                <span>{invoice.clients?.address}</span>
+
+                            {/* RUC */}
+                            <div className="absolute top-[0mm] left-[135mm]">
+                                {invoice.clients?.tax_id}
                             </div>
-                            <div className="flex">
-                                <span className="w-[20mm]"></span>
-                                <span>{invoice.clients?.tax_id}</span>
+
+                            {/* Dirección */}
+                            <div className="absolute top-[7mm] left-[0mm] w-[120mm] uppercase truncate">
+                                {invoice.clients?.address || invoice.clients?.city || ''}
+                            </div>
+
+                            {/* Teléfono */}
+                            <div className="absolute top-[7mm] left-[135mm]">
+                                {invoice.clients?.phone || ''}
+                            </div>
+
+                            {/* Nota de Remisión (Placeholder) */}
+                            <div className="absolute top-[14mm] left-[20mm]">
+                                {/* {invoice.remission_note || ''} */}
                             </div>
                         </div>
 
-                        {/* Items */}
-                        <div className="absolute top-[90mm] left-[10mm] w-[190mm]">
-                            {lines.map((line, idx) => (
-                                <div key={idx} className="flex mb-2">
-                                    <div className="w-[15mm] text-center">{line.quantity}</div>
-                                    <div className="w-[115mm] px-2 truncate uppercase">{line.description}</div>
-                                    <div className="w-[30mm] text-right px-2">{formatCurrency(line.unit_price)}</div>
-                                    <div className="w-[30mm] text-right">{formatCurrency(line.quantity * line.unit_price)}</div>
-                                </div>
-                            ))}
+
+                        {/* --- ITEMS TABLE --- */}
+                        {/* Top start: ~85mm. Row height approx 5-6mm */}
+                        <div className="absolute top-[85mm] left-[0mm] w-[200mm] text-xs">
+                            {lines.map((line, idx) => {
+                                const subtotal = line.quantity * line.unit_price;
+                                // Determine VAT column
+                                const isExempt = false; // Logic needed if prod has vat status
+                                const is5 = false;
+                                const is10 = true; // Defaulting to 10% for now
+
+                                return (
+                                    <div key={idx} className="flex mb-[2mm] h-[4mm] items-center">
+                                        {/* Código (Skip/Empty) */}
+                                        <div className="w-[18mm]"></div>
+
+                                        {/* Cantidad */}
+                                        <div className="w-[12mm] text-center">{line.quantity}</div>
+
+                                        {/* Descripción */}
+                                        <div className="w-[98mm] px-2 truncate uppercase">{line.description}</div>
+
+                                        {/* Precio Unitario */}
+                                        <div className="w-[22mm] text-right">{formatCurrency(line.unit_price)}</div>
+
+                                        {/* Exentas */}
+                                        <div className="w-[20mm] text-right">
+                                            {isExempt ? formatCurrency(subtotal) : ''}
+                                        </div>
+
+                                        {/* 5% */}
+                                        <div className="w-[18mm] text-right">
+                                            {is5 ? formatCurrency(subtotal) : ''}
+                                        </div>
+
+                                        {/* 10% */}
+                                        <div className="w-[20mm] text-right">
+                                            {is10 ? formatCurrency(subtotal) : ''}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
 
-                        {/* Footer */}
-                        <div className="absolute bottom-[40mm] left-[160mm] w-[40mm] text-right font-bold">
-                            {formatCurrency(invoice.total_amount || 0)}
+
+                        {/* --- FOOTER TOTALS --- */}
+
+                        {/* Subtotals Box (Bottom ~235mm) */}
+                        <div className="absolute top-[235mm] left-[148mm] flex w-[60mm] text-xs">
+                            <div className="w-[20mm] text-right">
+                                {/* Exentas Total */}
+                            </div>
+                            <div className="w-[20mm] text-right">
+                                {/* 5% Total */}
+                            </div>
+                            <div className="w-[20mm] text-right">
+                                {formatCurrency(invoice.total_amount || 0)}
+                            </div>
                         </div>
-                        <div className="absolute bottom-[30mm] left-[60mm] w-[40mm]">
-                            {formatCurrency(Math.round((invoice.total_amount || 0) / 11))}
+
+                        {/* Total a Pagar Text & Amount */}
+                        <div className="absolute top-[242mm] w-full flex text-xs">
+                            {/* Total en Letras */}
+                            <div className="absolute left-[35mm] w-[130mm] uppercase leading-tight">
+                                {totalInWords}
+                            </div>
+
+                            {/* Total Numérico */}
+                            <div className="absolute left-[175mm] w-[25mm] text-right font-bold text-sm">
+                                {formatCurrency(invoice.total_amount || 0)}
+                            </div>
                         </div>
+
+                        {/* Liquidación IVA */}
+                        <div className="absolute top-[252mm] left-[70mm] flex text-xs">
+                            <div className="w-[25mm] text-right">
+                                {/* 5% */}
+                                0
+                            </div>
+                            <div className="w-[30mm] text-right">
+                                {/* 10% */}
+                                {formatCurrency(Math.round((invoice.total_amount || 0) / 11))}
+                            </div>
+                            <div className="w-[40mm] text-right ml-[25mm]">
+                                {/* Total IVA */}
+                                {formatCurrency(Math.round((invoice.total_amount || 0) / 11))}
+                            </div>
+                        </div>
+
                     </div>
                 )}
             </div>
