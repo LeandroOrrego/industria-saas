@@ -65,8 +65,8 @@ const POS = {
     dateYear:       { top: '3.2cm',  left: '17cm' },
 
     // Client info
-    clientName:     { top: '4.3cm',  left: '3cm' },
-    clientRuc:      { top: '4.3cm',  left: '15.5cm' },
+    clientName:     { top: '4.5cm',  left: '3cm' },
+    clientRuc:      { top: '5.2cm',  left: '3cm' },
     clientAddress:  { top: '5.1cm',  left: '3cm' },
     clientPhone:    { top: '5.1cm',  left: '15.5cm' },
     clientRemision: { top: '5.9cm',  left: '5cm' },
@@ -117,7 +117,7 @@ export default function InvoicePrinter({ invoice, lines: linesProp }: InvoicePri
     const date = invoice.created_at ? new Date(invoice.created_at) : new Date();
     const total = invoice.total_amount ?? 0;
     const totalWords = numberToText(total);
-    const client = invoice.clients ?? {};
+    const client = Array.isArray(invoice.clients) ? (invoice.clients[0] || {}) : (invoice.clients || {});
 
     // VAT calculations
     const sumByVat = (rate: number) =>
