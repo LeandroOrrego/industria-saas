@@ -65,10 +65,10 @@ const POS = {
     dateYear:       { top: '3.2cm',  left: '17cm' },
 
     // Client info
-    clientName:     { top: '4.5cm',  left: '3cm' },
-    clientRuc:      { top: '5.2cm',  left: '3cm' },
-    clientAddress:  { top: '5.1cm',  left: '3cm' },
-    clientPhone:    { top: '5.1cm',  left: '15.5cm' },
+    clientName:     { top: '4.5cm',  left: '2.0cm' },
+    clientRuc:      { top: '4.5cm',  left: '14.5cm' },
+    clientAddress:  { top: '5.2cm',  left: '2.0cm' },
+    clientPhone:    { top: '5.2cm',  left: '14.5cm' },
     clientRemision: { top: '5.9cm',  left: '5cm' },
 
     // Condición Venta (X marks)
@@ -93,15 +93,7 @@ const POS = {
     liqIva10:       { top: '19.2cm', left: '8cm' },
 };
 
-/* Column widths for items table (must add up to ~20cm) */
-const COL = {
-    codigo: '2.2cm',
-    cant:   '1.5cm',
-    desc:   '8cm',
-    punit:  '2.8cm',
-    exenta: '2cm',
-    iva10:  '3cm',
-};
+
 
 const ROW_HEIGHT = '0.55cm';
 const MAX_ROWS = 14; // physical rows available on the pre-printed form
@@ -270,39 +262,34 @@ export default function InvoicePrinter({ invoice, lines: linesProp }: InvoicePri
                                 return (
                                     <div
                                         key={idx}
-                                        className="flex items-center"
+                                        className="relative flex items-center"
                                         style={{
                                             height: ROW_HEIGHT,
                                             ...(debug ? { outline: '1px dashed red', background: idx % 2 === 0 ? 'rgba(255,0,0,0.03)' : 'rgba(255,0,0,0.07)' } : {}),
                                         }}
                                     >
-                                        {/* Código */}
-                                        <div style={{ width: COL.codigo, textAlign: 'center', flexShrink: 0 }}>
-                                            {/* empty - no product code */}
-                                        </div>
-
                                         {/* Cantidad */}
-                                        <div style={{ width: COL.cant, textAlign: 'center', flexShrink: 0 }}>
+                                        <div className="absolute text-center" style={{ left: '1.0cm', width: '1.5cm' }}>
                                             {line.quantity}
                                         </div>
 
                                         {/* Descripción */}
-                                        <div style={{ width: COL.desc, paddingLeft: '2mm', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', textTransform: 'uppercase', flexShrink: 0 }}>
+                                        <div className="absolute overflow-hidden whitespace-nowrap text-ellipsis uppercase" style={{ left: '3.0cm', width: '10cm' }}>
                                             {line.description}
                                         </div>
 
                                         {/* Precio Unitario */}
-                                        <div style={{ width: COL.punit, textAlign: 'right', paddingRight: '2mm', flexShrink: 0 }}>
+                                        <div className="absolute text-right" style={{ left: '13.5cm', width: '2.5cm' }}>
                                             {fmt(line.unit_price)}
                                         </div>
 
-                                        {/* Exentas */}
-                                        <div style={{ width: COL.exenta, textAlign: 'right', paddingRight: '2mm', flexShrink: 0 }}>
+                                        {/* Exentas (Approximate position, if needed) */}
+                                        <div className="absolute text-right" style={{ left: '15.5cm', width: '1.5cm' }}>
                                             {vatRate === 0 ? fmt(subtotal) : ''}
                                         </div>
 
                                         {/* 10% */}
-                                        <div style={{ width: COL.iva10, textAlign: 'right', paddingRight: '2mm', flexShrink: 0 }}>
+                                        <div className="absolute text-right" style={{ left: '17.5cm', width: '2.5cm' }}>
                                             {vatRate === 10 ? fmt(subtotal) : (vatRate === 5 ? fmt(subtotal) : '')}
                                         </div>
                                     </div>
