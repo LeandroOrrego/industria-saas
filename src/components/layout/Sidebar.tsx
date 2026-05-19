@@ -19,7 +19,8 @@ import {
     Sun,
     Moon,
     Building,
-    DollarSign
+    DollarSign,
+    Zap
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -91,6 +92,7 @@ export default function Sidebar({ isOpen, setIsOpen, userEmail, userRole, isSupe
         {
             title: "Administración",
             items: [
+                { name: 'Venta Rápida', href: '/finance/quick-sale', icon: Zap },
                 { name: 'Caja', href: '/finance/cashflow', icon: Wallet },
                 { name: 'Cuentas a Cobrar', href: '/finance/receivable', icon: DollarSign },
                 { name: 'Facturación', href: '/finance/billing', icon: Receipt },

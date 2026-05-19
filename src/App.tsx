@@ -28,6 +28,7 @@ import PurchaseDetails from './pages/inventory/PurchaseDetails';
 import Billing from './pages/finance/Billing';
 import CreateInvoice from './pages/finance/CreateInvoice';
 import AccountsReceivable from './pages/finance/AccountsReceivable';
+import QuickSale from './pages/finance/QuickSale';
 import Cashflow from './pages/analytics/Cashflow';
 import Payroll from './pages/finance/Payroll';
 
@@ -92,6 +93,7 @@ function App() {
           <Route path="finance/billing" element={<Billing />} />
           <Route path="finance/billing/new" element={<CreateInvoice />} />
           <Route path="finance/billing/:id" element={<InvoiceDetails />} />
+          <Route path="finance/quick-sale" element={<QuickSale />} />
           <Route path="finance/receivable" element={<AccountsReceivable />} />
           <Route path="finance/cashflow" element={<Cashflow />} />
           <Route path="finance/payroll" element={<Payroll />} />
