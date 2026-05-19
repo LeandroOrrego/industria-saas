@@ -3,19 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import {
   ArrowLeft, CheckCircle, Search, Plus, Trash2, Zap,
-  ShoppingCart, User, CreditCard, Package, Printer
+  ShoppingCart, User, CreditCard, Package, Printer, Wrench
 } from 'lucide-react';
 
 type Client = { id: string; name: string; tax_id: string | null };
 type Product = { id: string; name: string; current_stock: number; sale_price?: number; unit: string };
 
 interface SaleItem {
-  product_id: string;
+  product_id: string | null;
   name: string;
   quantity: number;
   unit_price: number;
   unit: string;
   stock: number;
+  isLabor?: boolean;
 }
 
 type NotificationType = 'success' | 'error' | null;
@@ -39,6 +40,10 @@ export default function QuickSale() {
   const [itemQty, setItemQty] = useState(1);
   const [itemPrice, setItemPrice] = useState(0);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // Labor fields
+  const [laborAmount, setLaborAmount] = useState(0);
+  const [laborDesc, setLaborDesc] = useState('Mano de Obra');
 
   // Sale items
   const [items, setItems] = useState<SaleItem[]>([]);
@@ -107,6 +112,24 @@ export default function QuickSale() {
     setItemPrice(0);
   };
 
+  const handleAddLabor = () => {
+    if (laborAmount <= 0) return showNotification('error', 'El monto de mano de obra debe ser mayor a 0.');
+
+    setItems(prev => [...prev, {
+      product_id: null,
+      name: laborDesc || 'Mano de Obra',
+      quantity: 1,
+      unit_price: laborAmount,
+      unit: 'srv',
+      stock: 0,
+      isLabor: true,
+    }]);
+
+    // Reset
+    setLaborAmount(0);
+    setLaborDesc('Mano de Obra');
+  };
+
   const handleRemoveItem = (idx: number) => {
     setItems(prev => prev.filter((_, i) => i !== idx));
   };
@@ -147,10 +170,10 @@ export default function QuickSale() {
 
       if (invError) throw invError;
 
-      // 2. Insert invoice_lines
+      // 2. Insert invoice_lines (product_id null for labor items)
       const lines = items.map(i => ({
         invoice_id: inv.id,
-        product_id: i.product_id,
+        product_id: i.product_id || null,
         description: i.name,
         quantity: i.quantity,
         unit_price: i.unit_price,
@@ -158,8 +181,11 @@ export default function QuickSale() {
       const { error: linesError } = await supabase.from('invoice_lines').insert(lines);
       if (linesError) throw linesError;
 
-      // 3. If credit, insert accounts_receivable
+      // 3. Conditional logic based on sale condition
+      const clientName = clients.find(c => c.id === selectedClient)?.name || 'Cliente';
+
       if (saleCondition === 'credito') {
+        // Credit: insert accounts_receivable
         const { error: arError } = await supabase.from('accounts_receivable').insert([{
           client_id: selectedClient,
           invoice_id: inv.id,
@@ -168,18 +194,20 @@ export default function QuickSale() {
           status: 'pendiente',
         }]);
         if (arError) throw arError;
+      } else {
+        // Contado: insert cash income into transactions (caja)
+        const { error: txError } = await supabase.from('transactions').insert([{
+          organization_id: profile?.organization_id,
+          description: `Cobro Venta Mostrador - ${clientName}`,
+          type: 'income',
+          amount: total,
+          payment_method: 'cash',
+          transaction_date: new Date().toISOString().split('T')[0],
+          invoice_id: inv.id,
+          created_by: user?.id,
+        }]);
+        if (txError) throw txError;
       }
-
-      // 4. Register transaction
-      await supabase.from('transactions').insert([{
-        organization_id: profile?.organization_id,
-        description: `Venta Mostrador - Factura`,
-        type: 'income',
-        amount: total,
-        payment_method: saleCondition === 'contado' ? 'cash' : 'credit',
-        invoice_id: inv.id,
-        created_by: user?.id,
-      }]);
 
       setInvoiceId(inv.id);
       showNotification('success', '¡Venta registrada exitosamente!');
@@ -366,6 +394,39 @@ export default function QuickSale() {
                 <Plus size={18} /> Agregar
               </button>
             </div>
+
+            {/* Labor / Mano de Obra */}
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-zinc-800">
+              <h4 className="text-xs font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <Wrench size={14} /> Mano de Obra
+              </h4>
+              <div className="flex flex-col md:flex-row gap-3">
+                <input
+                  type="text"
+                  placeholder="Descripción (ej: Soldadura, Tornería...)"
+                  className="flex-1 py-3 px-3 bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-700 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-1 focus:ring-cobalt-500 transition-all"
+                  value={laborDesc}
+                  onChange={e => setLaborDesc(e.target.value)}
+                />
+                <div className="w-40 relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500 text-xs font-bold">Gs.</span>
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="Monto"
+                    className="w-full py-3 pl-9 pr-3 bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-700 rounded-lg text-gray-900 dark:text-white text-sm text-right focus:ring-1 focus:ring-cobalt-500 transition-all"
+                    value={laborAmount || ''}
+                    onChange={e => setLaborAmount(parseInt(e.target.value) || 0)}
+                  />
+                </div>
+                <button
+                  onClick={handleAddLabor}
+                  className="bg-amber-600 hover:bg-amber-500 text-white px-5 py-3 rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-amber-900/20 whitespace-nowrap"
+                >
+                  <Wrench size={16} /> Agregar M.O.
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Sale Grid */}
@@ -399,8 +460,16 @@ export default function QuickSale() {
                     items.map((item, idx) => (
                       <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-zinc-800/30 transition-colors group">
                         <td className="px-5 py-3">
-                          <p className="font-medium text-gray-900 dark:text-white">{item.name}</p>
-                          <p className="text-xs text-gray-400 dark:text-zinc-500">Stock: {item.stock} {item.unit}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-gray-900 dark:text-white">{item.name}</p>
+                            {item.isLabor && (
+                              <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400">M.O.</span>
+                            )}
+                          </div>
+                          {item.isLabor
+                            ? <p className="text-xs text-gray-400 dark:text-zinc-500">Servicio</p>
+                            : <p className="text-xs text-gray-400 dark:text-zinc-500">Stock: {item.stock} {item.unit}</p>
+                          }
                         </td>
                         <td className="px-5 py-3 text-right font-mono text-gray-700 dark:text-zinc-300">{item.quantity}</td>
                         <td className="px-5 py-3 text-right font-mono text-gray-700 dark:text-zinc-300">{formatGs(item.unit_price)}</td>
