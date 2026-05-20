@@ -43,7 +43,7 @@ export default function QuickSale() {
 
   // Labor fields
   const [laborAmount, setLaborAmount] = useState(0);
-  const [laborDesc, setLaborDesc] = useState('Mano de Obra');
+  const [laborDesc, setLaborDesc] = useState('');
 
   // Sale items
   const [items, setItems] = useState<SaleItem[]>([]);
@@ -113,11 +113,12 @@ export default function QuickSale() {
   };
 
   const handleAddLabor = () => {
-    if (laborAmount <= 0) return showNotification('error', 'El monto de mano de obra debe ser mayor a 0.');
+    if (!laborDesc.trim()) return showNotification('error', 'Debe ingresar una descripción para el servicio.');
+    if (laborAmount <= 0) return showNotification('error', 'El monto del servicio debe ser mayor a 0.');
 
     setItems(prev => [...prev, {
       product_id: null,
-      name: laborDesc || 'Mano de Obra',
+      name: laborDesc.trim(),
       quantity: 1,
       unit_price: laborAmount,
       unit: 'srv',
@@ -127,7 +128,7 @@ export default function QuickSale() {
 
     // Reset
     setLaborAmount(0);
-    setLaborDesc('Mano de Obra');
+    setLaborDesc('');
   };
 
   const handleRemoveItem = (idx: number) => {
@@ -195,6 +196,16 @@ export default function QuickSale() {
         }]);
         if (arError) throw arError;
       } else {
+        // Contado: insert accounts_receivable with balance 0 and status pagado
+        const { error: arError } = await supabase.from('accounts_receivable').insert([{
+          client_id: selectedClient,
+          invoice_id: inv.id,
+          total_amount: total,
+          balance: 0,
+          status: 'pagado',
+        }]);
+        if (arError) throw arError;
+
         // Contado: insert cash income into transactions (caja)
         const { error: txError } = await supabase.from('transactions').insert([{
           organization_id: profile?.organization_id,
@@ -395,15 +406,15 @@ export default function QuickSale() {
               </button>
             </div>
 
-            {/* Labor / Mano de Obra */}
+            {/* Quick Service */}
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-zinc-800">
               <h4 className="text-xs font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                <Wrench size={14} /> Mano de Obra
+                <Wrench size={14} /> Agregar Servicio Rápido
               </h4>
               <div className="flex flex-col md:flex-row gap-3">
                 <input
                   type="text"
-                  placeholder="Descripción (ej: Soldadura, Tornería...)"
+                  placeholder="Descripción (ej: Servicio de Soldadura, Tornería...)"
                   className="flex-1 py-3 px-3 bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-700 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-1 focus:ring-cobalt-500 transition-all"
                   value={laborDesc}
                   onChange={e => setLaborDesc(e.target.value)}
@@ -423,7 +434,7 @@ export default function QuickSale() {
                   onClick={handleAddLabor}
                   className="bg-amber-600 hover:bg-amber-500 text-white px-5 py-3 rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-amber-900/20 whitespace-nowrap"
                 >
-                  <Wrench size={16} /> Agregar M.O.
+                  <Wrench size={16} /> Agregar Servicio
                 </button>
               </div>
             </div>
