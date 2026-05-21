@@ -196,16 +196,6 @@ export default function QuickSale() {
         }]);
         if (arError) throw arError;
       } else {
-        // Contado: insert accounts_receivable with balance 0 and status pagado
-        const { error: arError } = await supabase.from('accounts_receivable').insert([{
-          client_id: selectedClient,
-          invoice_id: inv.id,
-          total_amount: total,
-          balance: 0,
-          status: 'pagado',
-        }]);
-        if (arError) throw arError;
-
         // Contado: insert cash income into transactions (caja)
         const { error: txError } = await supabase.from('transactions').insert([{
           organization_id: profile?.organization_id,
