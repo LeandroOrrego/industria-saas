@@ -159,13 +159,15 @@ export default function QuickSale() {
         .eq('id', user?.id)
         .single();
 
+      const isContado = saleCondition.toLowerCase() === 'contado';
+
       // 1. Insert invoice
       const { data: inv, error: invError } = await supabase.from('invoices').insert([{
         organization_id: profile?.organization_id,
         client_id: selectedClient,
         total_amount: total,
-        status: 'issued',
-        payment_method: saleCondition === 'contado' ? 'cash' : 'credit',
+        status: isContado ? 'pagada' : 'pendiente',
+        payment_method: isContado ? 'cash' : 'credit',
         due_date: new Date().toISOString(),
       }]).select().single();
 
@@ -185,18 +187,9 @@ export default function QuickSale() {
       // 3. Conditional logic based on sale condition
       const clientName = clients.find(c => c.id === selectedClient)?.name || 'Cliente';
 
-      if (saleCondition === 'credito') {
-        // Credit: insert accounts_receivable
-        const { error: arError } = await supabase.from('accounts_receivable').insert([{
-          client_id: selectedClient,
-          invoice_id: inv.id,
-          total_amount: total,
-          balance: total,
-          status: 'pendiente',
-        }]);
-        if (arError) throw arError;
-      } else {
-        // Contado: insert cash income into transactions (caja)
+      if (isContado) {
+        // 1. Insertar ingreso en la tabla de caja (transactions/cash_movements)
+        // bajo NINGÚN CONCEPTO insertar en accounts_receivable aquí.
         const { error: txError } = await supabase.from('transactions').insert([{
           organization_id: profile?.organization_id,
           description: `Cobro Venta Mostrador - ${clientName}`,
@@ -208,6 +201,17 @@ export default function QuickSale() {
           created_by: user?.id,
         }]);
         if (txError) throw txError;
+      } else {
+        // 1. Insertar registro en accounts_receivable (status: 'pendiente')
+        // bajo NINGÚN CONCEPTO insertar en la tabla de caja aquí.
+        const { error: arError } = await supabase.from('accounts_receivable').insert([{
+          client_id: selectedClient,
+          invoice_id: inv.id,
+          total_amount: total,
+          balance: total,
+          status: 'pendiente',
+        }]);
+        if (arError) throw arError;
       }
 
       setInvoiceId(inv.id);
