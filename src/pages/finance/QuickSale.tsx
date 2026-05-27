@@ -187,7 +187,7 @@ export default function QuickSale() {
       // 3. Conditional logic based on sale condition
       const clientName = clients.find(c => c.id === selectedClient)?.name || 'Cliente';
 
-      if (isContado) {
+      if (saleCondition.toLowerCase() === 'contado') {
         // 1. Insertar ingreso en la tabla de caja (transactions/cash_movements)
         // bajo NINGÚN CONCEPTO insertar en accounts_receivable aquí.
         const { error: txError } = await supabase.from('transactions').insert([{
@@ -201,7 +201,10 @@ export default function QuickSale() {
           created_by: user?.id,
         }]);
         if (txError) throw txError;
-      } else {
+      }
+      
+      // Validar explícitamente que sea crédito
+      if (saleCondition.toLowerCase() === 'credito') {
         // 1. Insertar registro en accounts_receivable (status: 'pendiente')
         // bajo NINGÚN CONCEPTO insertar en la tabla de caja aquí.
         const { error: arError } = await supabase.from('accounts_receivable').insert([{
