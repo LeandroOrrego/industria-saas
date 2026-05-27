@@ -159,21 +159,32 @@ export default function QuickSale() {
         .eq('id', user?.id)
         .single();
 
-      const isContado = saleCondition.toLowerCase() === 'contado';
+      const isContado = saleCondition === 'contado';
 
-      // 1. Insert invoice
-      const { data: inv, error: invError } = await supabase.from('invoices').insert([{
-        organization_id: profile?.organization_id,
-        client_id: selectedClient,
-        total_amount: total,
-        status: isContado ? 'pagada' : 'pendiente',
-        payment_method: isContado ? 'cash' : 'credit',
-        due_date: new Date().toISOString(),
-      }]).select().single();
+      // 1. Obtener número de factura correlativo
+      const { data: invoiceNumber, error: numError } = await supabase
+        .rpc('get_next_invoice_number', {
+          p_org_id: profile?.organization_id
+        });
+      if (numError) throw numError;
 
+      // 2. Insertar factura con número y status correcto
+      const { data: inv, error: invError } = await supabase
+        .from('invoices')
+        .insert([{
+          organization_id: profile?.organization_id,
+          client_id: selectedClient,
+          total_amount: total,
+          status: isContado ? 'pagada' : 'pendiente',
+          payment_method: isContado ? 'cash' : 'credit',
+          due_date: new Date().toISOString(),
+          invoice_number: invoiceNumber,
+        }])
+        .select()
+        .single();
       if (invError) throw invError;
 
-      // 2. Insert invoice_lines (product_id null for labor items)
+      // 3. Insertar líneas de factura
       const lines = items.map(i => ({
         invoice_id: inv.id,
         product_id: i.product_id || null,
@@ -181,44 +192,46 @@ export default function QuickSale() {
         quantity: i.quantity,
         unit_price: i.unit_price,
       }));
-      const { error: linesError } = await supabase.from('invoice_lines').insert(lines);
+      const { error: linesError } = await supabase
+        .from('invoice_lines')
+        .insert(lines);
       if (linesError) throw linesError;
 
-      // 3. Conditional logic based on sale condition
       const clientName = clients.find(c => c.id === selectedClient)?.name || 'Cliente';
 
-      if (saleCondition.toLowerCase() === 'contado') {
-        // 1. Insertar ingreso en la tabla de caja (transactions/cash_movements)
-        // bajo NINGÚN CONCEPTO insertar en accounts_receivable aquí.
-        const { error: txError } = await supabase.from('transactions').insert([{
-          organization_id: profile?.organization_id,
-          description: `Cobro Venta Mostrador - ${clientName}`,
-          type: 'income',
-          amount: total,
-          payment_method: 'cash',
-          transaction_date: new Date().toISOString().split('T')[0],
-          invoice_id: inv.id,
-          created_by: user?.id,
-        }]);
+      if (isContado) {
+        // CONTADO: solo caja, NUNCA accounts_receivable
+        const { error: txError } = await supabase
+          .from('transactions')
+          .insert([{
+            organization_id: profile?.organization_id,
+            description: `Cobro Venta Mostrador ${invoiceNumber} - ${clientName}`,
+            type: 'income',
+            amount: total,
+            payment_method: 'cash',
+            transaction_date: new Date().toISOString().split('T')[0],
+            invoice_id: inv.id,
+            created_by: user?.id,
+            document_number: invoiceNumber,
+          }]);
         if (txError) throw txError;
-      }
-      
-      // Validar explícitamente que sea crédito
-      if (saleCondition.toLowerCase() === 'credito') {
-        // 1. Insertar registro en accounts_receivable (status: 'pendiente')
-        // bajo NINGÚN CONCEPTO insertar en la tabla de caja aquí.
-        const { error: arError } = await supabase.from('accounts_receivable').insert([{
-          client_id: selectedClient,
-          invoice_id: inv.id,
-          total_amount: total,
-          balance: total,
-          status: 'pendiente',
-        }]);
+      } else {
+        // CRÉDITO: solo accounts_receivable, NUNCA caja
+        const { error: arError } = await supabase
+          .from('accounts_receivable')
+          .insert([{
+            client_id: selectedClient,
+            invoice_id: inv.id,
+            total_amount: total,
+            balance: total,
+            status: 'pendiente',
+          }]);
         if (arError) throw arError;
       }
 
       setInvoiceId(inv.id);
-      showNotification('success', '¡Venta registrada exitosamente!');
+      showNotification('success', `¡Venta ${invoiceNumber} registrada exitosamente!`);
+
     } catch (error: any) {
       console.error(error);
       showNotification('error', `Error al facturar: ${error.message || 'Intente de nuevo.'}`);
@@ -257,11 +270,10 @@ export default function QuickSale() {
     <div className="p-6 md:p-8 max-w-6xl mx-auto min-h-screen text-gray-900 dark:text-zinc-100">
       {/* Notification Toast */}
       {notification.type && (
-        <div className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl font-bold text-sm flex items-center gap-2 animate-[slideIn_0.3s_ease-out] ${
-          notification.type === 'success'
+        <div className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl font-bold text-sm flex items-center gap-2 animate-[slideIn_0.3s_ease-out] ${notification.type === 'success'
             ? 'bg-emerald-600 text-white shadow-emerald-900/30'
             : 'bg-red-600 text-white shadow-red-900/30'
-        }`}>
+          }`}>
           {notification.type === 'success' ? <CheckCircle size={18} /> : <span>⚠</span>}
           {notification.message}
         </div>
@@ -310,13 +322,12 @@ export default function QuickSale() {
                     <button
                       key={cond}
                       onClick={() => setSaleCondition(cond)}
-                      className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-2 border ${
-                        saleCondition === cond
+                      className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-2 border ${saleCondition === cond
                           ? cond === 'contado'
                             ? 'bg-emerald-600/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
                             : 'bg-amber-600/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
                           : 'bg-gray-50 dark:bg-zinc-950 border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
-                      }`}
+                        }`}
                     >
                       {cond === 'contado' ? <ShoppingCart size={16} /> : <CreditCard size={16} />}
                       {cond === 'contado' ? 'Contado' : 'Crédito'}
@@ -358,11 +369,10 @@ export default function QuickSale() {
                           className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-800 flex justify-between items-center border-b border-gray-100 dark:border-zinc-800 last:border-0 transition-colors"
                         >
                           <span className="font-medium text-sm text-gray-900 dark:text-white">{p.name}</span>
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded ${
-                            p.current_stock > 0
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded ${p.current_stock > 0
                               ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                               : 'bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400'
-                          }`}>
+                            }`}>
                             Stock: {p.current_stock} {p.unit}
                           </span>
                         </button>
