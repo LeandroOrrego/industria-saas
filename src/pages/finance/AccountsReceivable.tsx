@@ -7,6 +7,7 @@ import RegisterPaymentModal from '../../components/RegisterPaymentModal';
 // Extend type 
 type Invoice = {
     id: string;
+    ar_id?: string;
     invoice_number: string;
     created_at: string;
     total_amount: number;
@@ -37,14 +38,41 @@ export default function AccountsReceivable() {
         setLoading(true);
         try {
             const { data, error } = await supabase
-                .from('invoices')
-                .select('*, clients(name, tax_id)')
-                .neq('status', 'paid') // Only pending/partial
-                .is('deleted_at', null) // Filter out deleted
+                .from('accounts_receivable')
+                .select(`
+                id,
+                total_amount,
+                balance,
+                status,
+                invoices (
+                    id,
+                    invoice_number,
+                    created_at,
+                    total_amount,
+                    balance,
+                    status,
+                    payment_method,
+                    clients (name, tax_id)
+                )
+            `)
+                .in('status', ['pendiente', 'partial'])
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            setInvoices(data || []);
+
+            const mapped = (data || []).map((ar: any) => ({
+                id: ar.invoices?.id,
+                ar_id: ar.id,
+                invoice_number: ar.invoices?.invoice_number,
+                created_at: ar.invoices?.created_at,
+                total_amount: ar.total_amount,
+                balance: ar.balance,
+                status: ar.status,
+                condition: ar.invoices?.payment_method,
+                clients: ar.invoices?.clients,
+            }));
+
+            setInvoices(mapped);
         } catch (error) {
             console.error('Error fetching receivables:', error);
         } finally {
@@ -187,7 +215,7 @@ export default function AccountsReceivable() {
                                                 <ArrowRight size={16} />
                                             </button>
                                             <button
-                                                onClick={() => handleDeleteInvoice(inv.id)}
+                                                onClick={() => handleDeleteInvoice(inv.ar_id || inv.id)}
                                                 className="text-gray-400 dark:text-zinc-500 hover:text-red-600 dark:hover:text-red-400 p-2 hover:bg-red-50 dark:hover:bg-zinc-800 rounded transition-colors"
                                                 title="Eliminar"
                                             >
