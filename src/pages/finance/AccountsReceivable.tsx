@@ -56,7 +56,7 @@ export default function AccountsReceivable() {
                 )
             `)
                 .in('status', ['pendiente', 'partial'])
-                .order('created_at', { ascending: false });
+                .order('id', { ascending: false });
 
             if (error) throw error;
 
