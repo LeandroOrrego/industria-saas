@@ -19,16 +19,13 @@ export default function CreateOS() {
     const [products, setProducts] = useState<Product[]>([]);
     const [selectedClientId, setSelectedClientId] = useState('');
 
-    // New Fields
     const [description, setDescription] = useState('');
-    const [priority, setPriority] = useState('normal'); // 'alta', 'normal', 'baja'
+    const [priority, setPriority] = useState('normal');
     const [deliveryDate, setDeliveryDate] = useState('');
 
-    // Cart/Items State
     const [items, setItems] = useState<OrderItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Loading states
     const [loadingClients, setLoadingClients] = useState(true);
     const [loadingProducts, setLoadingProducts] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -46,7 +43,6 @@ export default function CreateOS() {
 
     async function loadOrderData(id: string) {
         setLoadingProducts(true);
-        // Load Header
         const { data: os, error } = await supabase
             .from('service_orders')
             .select('*')
@@ -66,7 +62,6 @@ export default function CreateOS() {
             setDeliveryDate(os.delivery_date ? os.delivery_date.split('T')[0] : '');
         }
 
-        // Load Items
         const { data: itemsData } = await supabase
             .from('service_order_items')
             .select('*, product:products(*)')
@@ -90,7 +85,6 @@ export default function CreateOS() {
     }
 
     async function fetchProducts() {
-        // REMOVED .gt('current_stock', 0) to allow services and out-of-stock items
         const { data } = await supabase.from('products').select('*').order('name');
         if (data) setProducts(data);
         setLoadingProducts(false);
@@ -126,27 +120,20 @@ export default function CreateOS() {
 
         setSubmitting(true);
         try {
-            // Get user org_id
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('No user found');
-            const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single();
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('organization_id')
+                .eq('id', user.id)
+                .single();
 
             if (!profile?.organization_id) throw new Error('No organization found');
-
-            // 1. Prepare Header Payload
-            const payload = {
-                client_id: selectedClientId,
-                status: osIdToEdit ? undefined : 'abierta', // Don't reset status on edit usually, or keep existing.
-                description: description,
-                priority: priority,
-                delivery_date: deliveryDate || null,
-                organization_id: profile.organization_id
-            };
 
             let targetOsId = osIdToEdit;
 
             if (osIdToEdit) {
-                // UPDATE
+                // UPDATE header
                 const { error: updateError } = await supabase
                     .from('service_orders')
                     .update({
@@ -156,44 +143,90 @@ export default function CreateOS() {
                         delivery_date: deliveryDate || null
                     })
                     .eq('id', osIdToEdit);
-
                 if (updateError) throw updateError;
 
-                // Delete existing items to replace (simple approach) or upsert. 
-                // Replacing is safer for strict consistency if ID not tracked.
-                await supabase.from('service_order_items').delete().eq('os_id', osIdToEdit);
+                // Obtener items actuales en BD
+                const { data: existingItems } = await supabase
+                    .from('service_order_items')
+                    .select('id, product_id, quantity')
+                    .eq('os_id', osIdToEdit);
+
+                const existing = existingItems || [];
+
+                // Items a eliminar: están en BD pero no en el form
+                const toDelete = existing.filter(
+                    e => !items.find(i => i.product_id === e.product_id)
+                );
+
+                // Items a insertar: están en el form pero no en BD
+                const toInsert = items.filter(
+                    i => !existing.find(e => e.product_id === i.product_id)
+                );
+
+                // Items a actualizar: están en ambos con distinta cantidad
+                const toUpdate = items.filter(i => {
+                    const match = existing.find(e => e.product_id === i.product_id);
+                    return match && match.quantity !== i.quantity;
+                });
+
+                if (toDelete.length > 0) {
+                    const { error } = await supabase
+                        .from('service_order_items')
+                        .delete()
+                        .in('id', toDelete.map(d => d.id));
+                    if (error) throw error;
+                }
+
+                if (toInsert.length > 0) {
+                    const { error } = await supabase
+                        .from('service_order_items')
+                        .insert(toInsert.map(i => ({
+                            os_id: osIdToEdit,
+                            product_id: i.product_id,
+                            quantity: i.quantity,
+                        })));
+                    if (error) throw error;
+                }
+
+                for (const item of toUpdate) {
+                    const match = existing.find(e => e.product_id === item.product_id)!;
+                    const { error } = await supabase
+                        .from('service_order_items')
+                        .update({ quantity: item.quantity })
+                        .eq('id', match.id);
+                    if (error) throw error;
+                }
 
             } else {
-                // INSERT
+                // INSERT nueva OS
                 const { data: osData, error: osError } = await supabase
                     .from('service_orders')
-                    .insert([payload])
+                    .insert([{
+                        client_id: selectedClientId,
+                        status: 'abierta',
+                        description,
+                        priority,
+                        delivery_date: deliveryDate || null,
+                        organization_id: profile.organization_id
+                    }])
                     .select()
                     .single();
-
                 if (osError) throw osError;
                 targetOsId = osData.id;
+
+                if (items.length > 0) {
+                    const { error: itemsError } = await supabase
+                        .from('service_order_items')
+                        .insert(items.map(item => ({
+                            os_id: targetOsId,
+                            product_id: item.product_id,
+                            quantity: item.quantity,
+                        })));
+                    if (itemsError) throw itemsError;
+                }
             }
 
-            if (!targetOsId) throw new Error("Failed to get OS ID");
-
-            // 2. Insert Items (for both new and edit - since we cleared edit items)
-            if (items.length > 0) {
-                const osItems = items.map(item => ({
-                    os_id: targetOsId,
-                    product_id: item.product_id,
-                    quantity: item.quantity,
-                }));
-
-                const { error: itemsError } = await supabase
-                    .from('service_order_items')
-                    .insert(osItems);
-
-                if (itemsError) throw itemsError;
-            }
-
-            // Redirect
-            navigate('/operations/dashboard'); // Redirect to dashboard or list
+            navigate('/operations/dashboard');
         } catch (error: any) {
             console.error('Error creating/updating OS:', error);
             alert(`Error al guardar la orden: ${error.message}`);
@@ -224,10 +257,10 @@ export default function CreateOS() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Left Column: Form & Selection (8 cols) */}
+                {/* Left Column */}
                 <div className="lg:col-span-8 space-y-6">
 
-                    {/* General Info Card */}
+                    {/* General Info */}
                     <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                             <FileText size={20} className="text-cobalt-600 dark:text-cobalt-500" />
@@ -270,37 +303,36 @@ export default function CreateOS() {
                                 placeholder="Detalla el trabajo a realizar (medidas, materiales, acabados)..."
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                            ></textarea>
+                            />
                         </div>
 
                         <div>
                             <label className="block text-xs font-bold text-gray-500 dark:text-zinc-400 uppercase mb-2">Prioridad</label>
                             <div className="flex gap-4">
-                                <label className={`flex-1 cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2 transition-all ${priority === 'normal' ? 'bg-cobalt-50 border-cobalt-500 text-cobalt-600 dark:bg-cobalt-600/20 dark:text-cobalt-400' : 'bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-500 hover:bg-gray-50 dark:hover:bg-zinc-800'}`}>
-                                    <input type="radio" name="priority" value="normal" checked={priority === 'normal'} onChange={() => setPriority('normal')} className="hidden" />
-                                    <span className="font-bold text-sm">Normal</span>
-                                </label>
-                                <label className={`flex-1 cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2 transition-all ${priority === 'alta' ? 'bg-amber-50 border-amber-500 text-amber-600 dark:bg-amber-500/20 dark:text-amber-500' : 'bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-500 hover:bg-gray-50 dark:hover:bg-zinc-800'}`}>
-                                    <input type="radio" name="priority" value="alta" checked={priority === 'alta'} onChange={() => setPriority('alta')} className="hidden" />
-                                    <AlertTriangle size={16} />
-                                    <span className="font-bold text-sm">Alta</span>
-                                </label>
-                                <label className={`flex-1 cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2 transition-all ${priority === 'urgente' ? 'bg-red-50 border-red-500 text-red-600 dark:bg-red-500/20 dark:text-red-500' : 'bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-500 hover:bg-gray-50 dark:hover:bg-zinc-800'}`}>
-                                    <input type="radio" name="priority" value="urgente" checked={priority === 'urgente'} onChange={() => setPriority('urgente')} className="hidden" />
-                                    <AlertTriangle size={16} />
-                                    <span className="font-bold text-sm">Urgente</span>
-                                </label>
+                                {[
+                                    { value: 'normal', label: 'Normal', color: 'cobalt' },
+                                    { value: 'alta', label: 'Alta', color: 'amber' },
+                                    { value: 'urgente', label: 'Urgente', color: 'red' },
+                                ].map(({ value, label, color }) => (
+                                    <label key={value} className={`flex-1 cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2 transition-all ${priority === value
+                                            ? `bg-${color}-50 border-${color}-500 text-${color}-600 dark:bg-${color}-500/20 dark:text-${color}-400`
+                                            : 'bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-500 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                                        }`}>
+                                        <input type="radio" name="priority" value={value} checked={priority === value} onChange={() => setPriority(value)} className="hidden" />
+                                        {value !== 'normal' && <AlertTriangle size={16} />}
+                                        <span className="font-bold text-sm">{label}</span>
+                                    </label>
+                                ))}
                             </div>
                         </div>
                     </div>
 
-                    {/* Materials/Products Selection */}
+                    {/* Products */}
                     <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm min-h-[400px]">
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                             <Search size={20} className="text-gray-400 dark:text-zinc-500" />
                             Agregar Insumos / Servicios
                         </h2>
-
                         <div className="mb-6 relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-zinc-500" size={18} />
                             <input
@@ -311,7 +343,6 @@ export default function CreateOS() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {filteredProducts.slice(0, 12).map(product => (
                                 <button
@@ -337,12 +368,11 @@ export default function CreateOS() {
                     </div>
                 </div>
 
-                {/* Right Column: Order Summary (4 cols) */}
+                {/* Right Column: Summary */}
                 <div className="lg:col-span-4">
                     <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm lg:sticky lg:top-6">
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Resumen de Insumos</h2>
-
-                        <div className="space-y-3 mb-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                        <div className="space-y-3 mb-6 max-h-[400px] overflow-y-auto pr-2">
                             {items.length === 0 ? (
                                 <div className="text-center py-8 border-2 border-dashed border-gray-300 dark:border-zinc-800 rounded-xl">
                                     <p className="text-gray-500 dark:text-zinc-500 text-sm">No hay ítems seleccionados.</p>
@@ -352,10 +382,7 @@ export default function CreateOS() {
                                     <div key={item.product_id} className="flex flex-col p-3 bg-gray-50 dark:bg-zinc-950 rounded-lg border border-gray-200 dark:border-zinc-800">
                                         <div className="flex justify-between items-start mb-2">
                                             <p className="font-bold text-sm text-gray-800 dark:text-zinc-300 line-clamp-1">{item.product.name}</p>
-                                            <button
-                                                onClick={() => removeItem(item.product_id)}
-                                                className="text-gray-400 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                                            >
+                                            <button onClick={() => removeItem(item.product_id)} className="text-gray-400 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 transition-colors">
                                                 <Trash2 size={14} />
                                             </button>
                                         </div>
@@ -375,7 +402,6 @@ export default function CreateOS() {
                                 ))
                             )}
                         </div>
-
                         <div className="border-t border-gray-200 dark:border-zinc-800 pt-6">
                             <div className="flex justify-between text-sm text-gray-500 dark:text-zinc-400 mb-6">
                                 <span>Total Ítems:</span>

@@ -43,20 +43,41 @@ export default function RegisterPaymentModal({ isOpen, onClose, onSuccess, invoi
 
         try {
             const { data: { user } } = await supabase.auth.getUser();
+            const paymentAmount = parseFloat(amount);
 
-            const { error } = await supabase.from('payments').insert([{
+            // 1. Registrar pago en tabla payments
+            // Esto dispara tr_update_invoice_payment que actualiza invoices.balance y status
+            const { error: paymentError } = await supabase.from('payments').insert([{
                 invoice_id: invoice.id,
-                amount: parseFloat(amount),
+                amount: paymentAmount,
                 payment_date: paymentDate,
                 payment_method: paymentMethod,
                 reference: reference,
                 notes: notes,
                 created_by: user?.id
             }]);
+            if (paymentError) throw paymentError;
 
-            if (error) throw error;
+            // 2. Actualizar accounts_receivable para reflejar el cobro
+            const { data: arRecord } = await supabase
+                .from('accounts_receivable')
+                .select('id, balance')
+                .eq('invoice_id', invoice.id)
+                .single();
 
-            alert('Pago registrado correctamente');
+            if (arRecord) {
+                const newBalance = Math.max((arRecord.balance || 0) - paymentAmount, 0);
+                const newStatus = newBalance <= 0 ? 'cobrado' : 'parcial';
+
+                await supabase
+                    .from('accounts_receivable')
+                    .update({
+                        balance: newBalance,
+                        status: newStatus
+                    })
+                    .eq('id', arRecord.id);
+            }
+
             onSuccess();
             onClose();
         } catch (error: any) {

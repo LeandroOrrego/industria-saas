@@ -66,106 +66,111 @@ export default function ServiceOrderDrawer({ isOpen, onClose, orderId, onUpdate 
 
     const handleGenerateInvoice = async () => {
         if (!order) return;
-
         setSaving(true);
         try {
-            // 1. Get Organization Settings for Numbering
-            const { data: profile } = await supabase.auth.getUser();
-            const { data: userProfile } = await supabase.from('profiles').select('organization_id').eq('id', profile.user?.id).single();
-
-            if (!userProfile?.organization_id) throw new Error('No tienes organización asignada');
-
-            const { data: org, error: orgError } = await supabase
-                .from('organizations')
-                .select('invoice_prefix, next_invoice_number')
-                .eq('id', userProfile.organization_id)
+            const { data: { user } } = await supabase.auth.getUser();
+            const { data: userProfile } = await supabase
+                .from('profiles')
+                .select('organization_id')
+                .eq('id', user?.id)
                 .single();
 
-            if (orgError) throw new Error('Error al obtener numeración de factura');
+            if (!userProfile?.organization_id) throw new Error('Sin organización asignada');
 
-            // Format Invoice Number: 001-001-0000001
-            const prefix = org.invoice_prefix || '001-001';
-            const nextNum = org.next_invoice_number || 1;
-            const formattedNum = `${prefix}-${nextNum.toString().padStart(7, '0')}`;
+            const isContado = invoiceCondition === 'contado';
+            const invoiceTotal = invoiceMode === 'detailed' ? calculateTotal() : summaryAmount;
 
-            // 2. Create Invoice Header
-            const subtotal = calculateTotal();
+            // 1. Número correlativo unificado (misma función que QuickSale)
+            const { data: invoiceNumber, error: numError } = await supabase
+                .rpc('get_next_invoice_number', { p_org_id: userProfile.organization_id });
+            if (numError) throw numError;
+
+            // 2. Crear factura con status correcto
             const { data: invoice, error: invError } = await supabase
                 .from('invoices')
                 .insert({
                     client_id: order.client_id,
                     os_id: order.id,
-                    total_amount: invoiceMode === 'detailed' ? subtotal : summaryAmount,
-                    invoice_number: formattedNum,
-                    condition: invoiceCondition,
-                    created_at: new Date().toISOString(),
-                    organization_id: userProfile.organization_id
+                    organization_id: userProfile.organization_id,
+                    total_amount: invoiceTotal,
+                    invoice_number: invoiceNumber,
+                    status: isContado ? 'pagada' : 'pendiente',
+                    payment_method: isContado ? 'cash' : 'credit',
+                    due_date: new Date().toISOString(),
                 })
                 .select()
                 .single();
-
             if (invError) throw invError;
 
-            // 3. Create Invoice Lines
+            // 3. Crear líneas de factura
             if (invoiceMode === 'detailed') {
-                const invoiceLines = items.map(item => ({
+                const lines = items.map(item => ({
                     invoice_id: invoice.id,
-                    os_item_id: item.id,
                     description: item.products?.name || 'Item sin nombre',
                     quantity: item.quantity,
-                    unit_price: item.products?.sale_price || 0
+                    unit_price: item.products?.sale_price || 0,
                 }));
-
-                // Add Labor
                 if (laborCost > 0) {
-                    invoiceLines.push({
+                    lines.push({
                         invoice_id: invoice.id,
-                        // os_item_id: null,
                         description: 'Mano de Obra / Servicios',
                         quantity: 1,
-                        unit_price: laborCost
-                    } as any);
+                        unit_price: laborCost,
+                    });
                 }
-
-                const { error: linesError } = await supabase
-                    .from('invoice_lines')
-                    .insert(invoiceLines);
-
+                const { error: linesError } = await supabase.from('invoice_lines').insert(lines);
                 if (linesError) throw linesError;
             } else {
-                // Summary Mode (Single Line)
-                const { error: lineError } = await supabase
-                    .from('invoice_lines')
-                    .insert({
-                        invoice_id: invoice.id,
-                        os_item_id: null,
-                        description: summaryDescription,
-                        quantity: 1,
-                        unit_price: summaryAmount
-                    });
-
+                const { error: lineError } = await supabase.from('invoice_lines').insert({
+                    invoice_id: invoice.id,
+                    description: summaryDescription,
+                    quantity: 1,
+                    unit_price: summaryAmount,
+                });
                 if (lineError) throw lineError;
             }
 
-            // 4. Update Next Invoice Number
-            await supabase
-                .from('organizations')
-                .update({ next_invoice_number: nextNum + 1 })
-                .eq('id', userProfile.organization_id);
+            // 4. Flujo financiero según condición
+            const clientName = order.clients?.name || 'Cliente';
 
-            // 5. Update OS Status
+            if (isContado) {
+                // Contado: registrar en caja
+                const { error: txError } = await supabase.from('transactions').insert({
+                    organization_id: userProfile.organization_id,
+                    description: `Cobro OS ${invoiceNumber} - ${clientName}`,
+                    type: 'income',
+                    amount: invoiceTotal,
+                    payment_method: 'cash',
+                    transaction_date: new Date().toISOString().split('T')[0],
+                    invoice_id: invoice.id,
+                    created_by: user?.id,
+                    document_number: invoiceNumber,
+                });
+                if (txError) throw txError;
+            } else {
+                // Crédito: registrar en cuentas a cobrar
+                const { error: arError } = await supabase.from('accounts_receivable').insert({
+                    client_id: order.client_id,
+                    invoice_id: invoice.id,
+                    total_amount: invoiceTotal,
+                    balance: invoiceTotal,
+                    status: 'pendiente',
+                });
+                if (arError) throw arError;
+            }
+
+            // 5. Actualizar estado de la OS
             await supabase
                 .from('service_orders')
                 .update({ status: 'facturada' })
                 .eq('id', order.id);
 
-            alert('Factura generada correctamente: ' + formattedNum);
-            onUpdate(); // Refresh parent list
-            onClose(); // Close drawer
+            onUpdate();
+            onClose();
             navigate(`/finance/billing/${invoice.id}`);
 
         } catch (error: any) {
-            console.error('Error generating invoice:', error);
+            console.error('Error generando factura:', error);
             alert('Error al generar factura: ' + error.message);
         } finally {
             setSaving(false);

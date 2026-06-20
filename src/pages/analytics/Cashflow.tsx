@@ -36,32 +36,39 @@ export default function Cashflow() {
 
     async function fetchTransactions() {
         setLoading(true);
+
+        // Primer día del mes actual
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+            .toISOString().split('T')[0];
+
         const { data } = await supabase
             .from('transactions')
             .select('*')
             .order('transaction_date', { ascending: false })
-            .limit(100); // Increased limit for better stats accuracy
+            .limit(100);
 
         if (data) {
             setTransactions(data as any);
 
-            // Calculate High Level Stats
-            const income = data.filter((t: any) => t.type === 'income').reduce((acc: number, t: any) => acc + Number(t.amount), 0);
-            const expenses = data.filter((t: any) => t.type === 'expense').reduce((acc: number, t: any) => acc + Number(t.amount), 0);
+            // Stats solo del mes actual
+            const thisMonth = data.filter((t: any) =>
+                t.transaction_date >= firstDay
+            );
 
-            // Calculate Method Stats
-            const byMethod = {
-                cash: 0,
-                transfer: 0,
-                check: 0,
-                card: 0,
-                other: 0
-            };
+            const income = thisMonth
+                .filter((t: any) => t.type === 'income')
+                .reduce((acc: number, t: any) => acc + Number(t.amount), 0);
+
+            const expenses = thisMonth
+                .filter((t: any) => t.type === 'expense')
+                .reduce((acc: number, t: any) => acc + Number(t.amount), 0);
+
+            // Saldos por método — acumulado histórico (saldo real de cada cuenta)
+            const byMethod = { cash: 0, transfer: 0, check: 0, card: 0, other: 0 };
 
             data.forEach((t: any) => {
-                let method = t.payment_method?.toLowerCase() || 'cash';
-
-                // Normalize Spanish to English keys
+                let method = (t.payment_method || 'cash').toLowerCase();
                 if (method === 'efectivo') method = 'cash';
                 if (method === 'transferencia') method = 'transfer';
                 if (method === 'cheque') method = 'check';
@@ -70,11 +77,8 @@ export default function Cashflow() {
 
                 const amount = Number(t.amount);
                 if (method in byMethod) {
-                    if (t.type === 'income') {
-                        byMethod[method as keyof typeof byMethod] += amount;
-                    } else {
-                        byMethod[method as keyof typeof byMethod] -= amount;
-                    }
+                    byMethod[method as keyof typeof byMethod] +=
+                        t.type === 'income' ? amount : -amount;
                 }
             });
 
@@ -207,11 +211,14 @@ export default function Cashflow() {
                                 <td className="px-6 py-4 text-gray-900 dark:text-white font-medium">
                                     {t.description}
                                     <div className="text-xs text-gray-400 dark:text-zinc-500 uppercase mt-1 opacity-50 group-hover:opacity-100 transition-opacity">
-                                        {t.payment_method === 'cash' && 'Efectivo'}
-                                        {t.payment_method === 'transfer' && 'Transferencia'}
-                                        {t.payment_method === 'check' && 'Cheque'}
-                                        {t.payment_method === 'card' && 'Tarjeta'}
-                                        {t.payment_method === 'other' && 'Otro'}
+                                        {(() => {
+                                            const m = (t.payment_method || '').toLowerCase();
+                                            if (m === 'cash' || m === 'efectivo') return 'Efectivo';
+                                            if (m === 'transfer' || m === 'transferencia') return 'Transferencia';
+                                            if (m === 'check' || m === 'cheque') return 'Cheque';
+                                            if (m === 'card' || m === 'tarjeta') return 'Tarjeta';
+                                            return 'Otro';
+                                        })()}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">

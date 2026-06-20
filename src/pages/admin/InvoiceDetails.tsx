@@ -152,7 +152,7 @@ export default function InvoiceDetails() {
                 )}
 
                 <div className="flex items-center gap-2">
-                    {invoice?.status !== 'paid' && (
+                    {!['paid', 'pagada', 'cancelled'].includes(invoice?.status) && (
                         <button
                             onClick={() => setIsPaymentModalOpen(true)}
                             className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg shadow-emerald-900/20"
@@ -268,7 +268,9 @@ export default function InvoiceDetails() {
                                 <span className="col-span-3">{invoice.clients?.email || '-'}</span>
 
                                 <span className="font-bold">Condición de Venta:</span>
-                                <span className="uppercase font-bold">{invoice.condition || 'CONTADO'}</span>
+                                <span className="uppercase font-bold">
+                                    {invoice.payment_method === 'credit' ? 'CRÉDITO' : 'CONTADO'}
+                                </span>
                                 <span className="font-bold">Forma de Pago:</span>
                                 <span className="uppercase">{
                                     {
@@ -380,7 +382,7 @@ export default function InvoiceDetails() {
                         </div>
 
                         {/* Signature Box for Credit */}
-                        {invoice.condition === 'credito' && (
+                        {invoice.payment_method === 'credit' && (
                             <div className="border-t-2 border-black p-4 flex justify-between items-end mt-auto min-h-[100px]">
                                 <div className="text-xs space-y-4 w-1/2">
                                     <p>Debo(emos) y pagaré(mos) incondicionalmente a la orden de {invoice.organizations?.name}</p>

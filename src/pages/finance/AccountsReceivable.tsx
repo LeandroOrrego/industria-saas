@@ -55,7 +55,7 @@ export default function AccountsReceivable() {
                     clients (name, tax_id)
                 )
             `)
-                .in('status', ['pendiente', 'partial'])
+                .in('status', ['pendiente', 'parcial'])
                 .order('id', { ascending: false });
 
             if (error) throw error;
@@ -197,7 +197,7 @@ export default function AccountsReceivable() {
                                                 ? 'bg-orange-100 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400'
                                                 : 'bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-500'
                                                 }`}>
-                                                {inv.status === 'partial' ? 'Parcial' : 'Pendiente'}
+                                                {inv.status === 'parcial' ? 'Parcial' : 'Pendiente'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right flex items-center justify-end gap-2">

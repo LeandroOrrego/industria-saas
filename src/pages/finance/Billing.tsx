@@ -9,9 +9,9 @@ type Invoice = {
     invoice_number: string | null;
     client_id: string;
     total_amount: number;
-    status: 'draft' | 'issued' | 'paid' | 'cancelled';
+    status: 'draft' | 'issued' | 'paid' | 'cancelled' | 'pagada' | 'pendiente';
+    payment_method: string | null;
     created_at: string;
-    condition: string;
     clients?: { name: string } | null;
     deleted_at?: string | null;
 }
@@ -30,7 +30,7 @@ export default function Billing() {
         setLoading(true);
         const { data, error } = await supabase
             .from('invoices')
-            .select('*, clients(name)')
+            .select('*, clients(name), payment_method')
             .is('deleted_at', null) // Only show active invoices
             .order('created_at', { ascending: false });
 
@@ -67,11 +67,18 @@ export default function Billing() {
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case 'draft': return <span className="px-2 py-1 rounded text-xs font-bold bg-gray-200 dark:bg-zinc-800 text-gray-600 dark:text-zinc-500 uppercase">Borrador</span>;
-            case 'issued': return <span className="px-2 py-1 rounded text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase">Emitida</span>;
-            case 'paid': return <span className="px-2 py-1 rounded text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase">Pagada</span>;
-            case 'cancelled': return <span className="px-2 py-1 rounded text-xs font-bold bg-red-500/10 text-red-600 dark:text-red-500 border border-red-500/20 uppercase">Anulada</span>;
-            default: return <span>{status}</span>;
+            case 'draft':
+                return <span className="px-2 py-1 rounded text-xs font-bold bg-gray-200 dark:bg-zinc-800 text-gray-600 dark:text-zinc-500 uppercase">Borrador</span>;
+            case 'issued':
+            case 'pendiente':
+                return <span className="px-2 py-1 rounded text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase">Emitida</span>;
+            case 'paid':
+            case 'pagada':
+                return <span className="px-2 py-1 rounded text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase">Pagada</span>;
+            case 'cancelled':
+                return <span className="px-2 py-1 rounded text-xs font-bold bg-red-500/10 text-red-600 dark:text-red-500 border border-red-500/20 uppercase">Anulada</span>;
+            default:
+                return <span className="px-2 py-1 rounded text-xs font-bold bg-gray-200 dark:bg-zinc-800 text-gray-500 uppercase">{status}</span>;
         }
     }
 
@@ -116,7 +123,9 @@ export default function Billing() {
                                             {inv.invoice_number || 'PENDIENTE'}
                                         </span>
                                         {getStatusBadge(inv.status)}
-                                        <span className="text-xs text-gray-500 dark:text-zinc-600 border border-gray-200 dark:border-zinc-800 px-1 rounded uppercase">{inv.condition}</span>
+                                        <span className="text-xs text-gray-500 dark:text-zinc-600 border border-gray-200 dark:border-zinc-800 px-1 rounded uppercase">
+                                            {inv.payment_method === 'cash' ? 'Contado' : inv.payment_method === 'credit' ? 'Crédito' : ''}
+                                        </span>
                                     </div>
                                     <p className="text-gray-600 dark:text-zinc-400 font-medium">{inv.clients?.name}</p>
                                     <p className="text-gray-400 dark:text-zinc-600 text-xs mt-1 flex items-center gap-1">
