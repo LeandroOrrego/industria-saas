@@ -14,7 +14,7 @@ interface InventoryAdjustModalProps {
 
 export default function InventoryAdjustModal({ isOpen, onClose, onSuccess, product }: InventoryAdjustModalProps) {
     const [quantity, setQuantity] = useState('');
-    const [type, setType] = useState('in'); // in, out, adjustment (set)
+    const [type, setType] = useState('in'); // in, out
     const [notes, setNotes] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -27,7 +27,11 @@ export default function InventoryAdjustModal({ isOpen, onClose, onSuccess, produ
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('No user');
 
-            const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single();
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('organization_id')
+                .eq('id', user.id)
+                .single();
             if (!profile?.organization_id) throw new Error('No organization');
 
             const qty = parseFloat(quantity);
@@ -37,41 +41,46 @@ export default function InventoryAdjustModal({ isOpen, onClose, onSuccess, produ
                 return;
             }
 
-            // If type is 'adjustment' (set to value), we verify diff
-            // For now, let's keep it simple: Add or Subtract
-            // 'in' -> Entry
-            // 'out' -> Exit (Loss, Damage, Manual consumption)
+            // 1. Releer stock actual justo antes de ajustar (evita condición de carrera)
+            const { data: freshProduct, error: fetchError } = await supabase
+                .from('products')
+                .select('current_stock')
+                .eq('id', product.id)
+                .single();
+            if (fetchError) throw fetchError;
 
-            let finalType = type;
-            let qtyForMovement = qty;
+            const currentStock = freshProduct.current_stock || 0;
 
-            if (type === 'out') {
-                // Ensure enough stock? Or allow negative? Allow negative for now or check.
+            // 2. Validar que la salida no deje stock negativo
+            if (type === 'out' && qty > currentStock) {
+                const confirmNegative = confirm(
+                    `Stock actual: ${currentStock}. Esta salida dejará el stock en negativo (${(currentStock - qty).toFixed(2)}). ¿Continuar de todas formas?`
+                );
+                if (!confirmNegative) {
+                    setLoading(false);
+                    return;
+                }
             }
 
-            // Update Product Stock
-            // Note: In real app, consider using RPC function for atomicity, but client-side update is ok for MVP
+            const newStock = type === 'in' ? currentStock + qty : currentStock - qty;
 
-            let newStock = product.current_stock || 0;
-            if (type === 'in') newStock += qty;
-            if (type === 'out') newStock -= qty;
-
+            // 3. Actualizar stock con el valor fresco
             const { error: prodError } = await supabase
                 .from('products')
                 .update({ current_stock: newStock })
                 .eq('id', product.id);
-
             if (prodError) throw prodError;
 
-            // Log Movement
-            await supabase.from('stock_movements').insert([{
+            // 4. Registrar movimiento
+            const { error: movError } = await supabase.from('stock_movements').insert([{
                 organization_id: profile.organization_id,
                 product_id: product.id,
-                type: type === 'out' ? 'out' : 'in', // 'adjustment' logic is more complex, skip for now
+                type: type === 'out' ? 'out' : 'in',
                 quantity: qty,
                 notes: notes || 'Ajuste manual',
                 user_id: user.id
             }]);
+            if (movError) throw movError;
 
             onSuccess();
             onClose();
