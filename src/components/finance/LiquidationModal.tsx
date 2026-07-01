@@ -86,26 +86,42 @@ export default function LiquidationModal({ isOpen, onClose, onSuccess, employee 
         setLoading(true);
 
         try {
-            // 1. Create Transaction (Expense)
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('No user found');
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('organization_id')
+                .eq('id', user.id)
+                .single();
+            if (!profile?.organization_id) throw new Error('No organization found');
+
+            // Buscar categoría "Salarios" o "Sueldos" para egresos
+            const { data: category } = await supabase
+                .from('transaction_categories')
+                .select('id')
+                .eq('organization_id', profile.organization_id)
+                .or('name.ilike.%salario%,name.ilike.%sueldo%')
+                .eq('type', 'expense')
+                .limit(1)
+                .maybeSingle();
+
             const description = `Liquidación Haberes - ${employee.full_name} - ${period}`;
 
-            // Assuming 'transactions' table structure. 
-            // We need to ensure we have a category for Salaries. 
-            // If not, we put 'Otros' or create one.
-
             const { error } = await supabase.from('transactions').insert({
+                organization_id: profile.organization_id,
                 description: description,
                 amount: netToPay,
                 type: 'expense',
-                transaction_date: new Date().toISOString(),
-                category: 'Salarios', // Ensure this category is text or ID based on schema
-                // If reference to employee is needed:
-                // employee_id: employee.id 
+                payment_method: 'cash',
+                transaction_date: new Date().toISOString().split('T')[0],
+                category_id: category?.id || null,
+                contact_id: employee.id,
+                contact_type: 'employee',
+                created_by: user.id,
             });
 
             if (error) throw error;
-
-            // 2. (Optional) Insert into a payroll_history table if it existed.
 
             onSuccess();
             onClose();
