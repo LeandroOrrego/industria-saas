@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { ArrowLeft, Printer, FileText, Download, DollarSign } from 'lucide-react';
 import { numberToText } from '../../utils/numberToText';
 import RegisterPaymentModal from '../../components/RegisterPaymentModal';
-import InvoicePrinter from '../../components/InvoicePrinter';
+import InvoicePrinter, { CEZEMER_LAYOUT } from '../../components/InvoicePrinter';
 
 export default function InvoiceDetails() {
     const { id } = useParams();
@@ -408,6 +408,14 @@ export default function InvoiceDetails() {
                                 vat_rate: l.vat_rate ?? 10,
                             })),
                         }}
+                        layout={
+                            invoice.organizations?.name?.toLowerCase().includes('cezemer')
+                                ? CEZEMER_LAYOUT
+                                : undefined
+                        }
+                        hideVat5Column={invoice.organizations?.name?.toLowerCase().includes('cezemer')}
+                        pageWidth={invoice.organizations?.name?.toLowerCase().includes('cezemer') ? '22cm' : '21.5cm'}
+                        pageHeight={invoice.organizations?.name?.toLowerCase().includes('cezemer') ? '22cm' : '21cm'}
                     />
                 )}
             </div>

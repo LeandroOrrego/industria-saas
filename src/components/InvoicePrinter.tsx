@@ -44,6 +44,10 @@ export interface InvoiceData {
 interface InvoicePrinterProps {
     invoice: InvoiceData;
     lines?: InvoiceLine[];     // alternatively pass lines separately
+    layout?: typeof DEFAULT_POS;       // optional per-organization layout override
+    hideVat5Column?: boolean;  // some pre-printed forms only have EXENTAS + 10%
+    pageWidth?: string;
+    pageHeight?: string;
 }
 
 /* ────────────────── Helpers ────────────────── */
@@ -57,7 +61,7 @@ const MONTHS_ES = [
 
 /* ─────────────────────── CSS Variables for positions (easy tuning) ─────────────────────── */
 
-const POS = {
+export const DEFAULT_POS = {
     // Header
     dateCity:       { top: '3.2cm',  left: '2.5cm' },
     dateDay:        { top: '3.2cm',  left: '11.8cm' },
@@ -101,7 +105,15 @@ const MAX_ROWS = 14; // physical rows available on the pre-printed form
 
 /* ═══════════════════════════ COMPONENT ═══════════════════════════ */
 
-export default function InvoicePrinter({ invoice, lines: linesProp }: InvoicePrinterProps) {
+export default function InvoicePrinter({
+    invoice,
+    lines: linesProp,
+    layout,
+    hideVat5Column = false,
+    pageWidth = '21.5cm',
+    pageHeight = '21cm',
+}: InvoicePrinterProps) {
+    const POS = layout ?? DEFAULT_POS;
     const [debug, setDebug] = useState(false);
     const [mode, setMode] = useState<'detail' | 'machine'>('detail');
 
@@ -185,8 +197,8 @@ export default function InvoicePrinter({ invoice, lines: linesProp }: InvoicePri
             <div
                 className="invoice-printer-page bg-white text-black mx-auto relative overflow-hidden shadow-xl print:shadow-none"
                 style={{
-                    width: '21.5cm',
-                    height: '21cm',
+                    width: pageWidth,
+                    height: pageHeight,
                     fontFamily: '"Courier New", Courier, monospace',
                     fontSize: '11px',
                     lineHeight: '1.3',
@@ -283,14 +295,14 @@ export default function InvoicePrinter({ invoice, lines: linesProp }: InvoicePri
                                             {fmt(line.unit_price)}
                                         </div>
 
-                                        {/* Exentas (Approximate position, if needed) */}
-                                        <div className="absolute text-right" style={{ left: '15.5cm', width: '1.5cm' }}>
+                                        {/* Exentas */}
+                                        <div className="absolute text-right" style={{ left: '15.5cm', width: '1.8cm' }}>
                                             {vatRate === 0 ? fmt(subtotal) : ''}
                                         </div>
 
-                                        {/* 10% */}
-                                        <div className="absolute text-right" style={{ left: '17.5cm', width: '2.5cm' }}>
-                                            {vatRate === 10 ? fmt(subtotal) : (vatRate === 5 ? fmt(subtotal) : '')}
+                                        {/* 10% (si el form no tiene columna 5%, todo lo gravado cae acá) */}
+                                        <div className="absolute text-right" style={{ left: hideVat5Column ? '17.3cm' : '17.5cm', width: '2.8cm' }}>
+                                            {vatRate !== 0 ? fmt(subtotal) : ''}
                                         </div>
                                     </div>
                                 );
@@ -376,7 +388,7 @@ export default function InvoicePrinter({ invoice, lines: linesProp }: InvoicePri
                 @media print {
                     /* Page size for pre-printed form */
                     @page {
-                        size: 21.5cm 21cm;
+                        size: ${pageWidth} ${pageHeight};
                         margin: 0;
                     }
 
@@ -408,3 +420,35 @@ export default function InvoicePrinter({ invoice, lines: linesProp }: InvoicePri
         </>
     );
 }
+
+// Layout calibrado para Cezemer Tornería (papel 22cm x 22cm, sin columna 5%)
+export const CEZEMER_LAYOUT: typeof DEFAULT_POS = {
+    dateCity:       { top: '3.2cm',  left: '2.5cm' },
+    dateDay:        { top: '3.2cm',  left: '11.8cm' },
+    dateMonth:      { top: '3.2cm',  left: '13.5cm' },
+    dateYear:       { top: '3.2cm',  left: '17cm' },
+
+    clientName:     { top: '4.6cm',  left: '2.5cm' },
+    clientRuc:      { top: '4.6cm',  left: '15.5cm' },
+    clientAddress:  { top: '5.3cm',  left: '2.5cm' },
+    clientPhone:    { top: '5.3cm',  left: '15.5cm' },
+    clientRemision: { top: '6.0cm',  left: '5cm' },
+
+    condContado:    { top: '6.6cm',  left: '16.3cm' },
+    condCredito:    { top: '6.6cm',  left: '19.3cm' },
+
+    itemsStart:     { top: '7.6cm',  left: '0.3cm' },
+
+    totalLetras:    { top: '17.6cm', left: '2.0cm' },
+
+    subtotalExent:  { top: '18.5cm', left: '17.5cm' },
+    subtotalIva5:   { top: '18.5cm', left: '17.5cm' }, // sin uso en este formulario
+    subtotalIva10:  { top: '18.9cm', left: '17.5cm' },
+
+    descuento:      { top: '19.3cm', left: '17.5cm' },
+    totalNumerico:  { top: '20.1cm', left: '17.5cm' },
+
+    liqIva5:        { top: '20.6cm', left: '5cm' },   // sin uso
+    totalIva:       { top: '20.6cm', left: '11cm' },
+    liqIva10:       { top: '20.6cm', left: '8cm' },
+};
