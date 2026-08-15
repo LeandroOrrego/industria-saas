@@ -390,6 +390,14 @@ export default function InvoicePrinter({
             {/* ═══════ Print-specific CSS ═══════ */}
             <style>{`
                 @media print {
+                    html, body {
+                        height: ${pageHeight} !important;
+                        width: ${pageWidth} !important;
+                        overflow: hidden !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+
                     /* Page size for pre-printed form */
                     @page {
                         size: ${pageWidth} ${pageHeight};
