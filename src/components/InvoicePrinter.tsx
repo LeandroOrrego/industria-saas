@@ -46,6 +46,7 @@ interface InvoicePrinterProps {
     lines?: InvoiceLine[];     // alternatively pass lines separately
     layout?: typeof DEFAULT_POS;       // optional per-organization layout override
     hideVat5Column?: boolean;  // some pre-printed forms only have EXENTAS + 10%
+    hideCityLabel?: boolean;
     pageWidth?: string;
     pageHeight?: string;
 }
@@ -110,6 +111,7 @@ export default function InvoicePrinter({
     lines: linesProp,
     layout,
     hideVat5Column = false,
+    hideCityLabel = false,
     pageWidth = '21.5cm',
     pageHeight = '21cm',
 }: InvoicePrinterProps) {
@@ -251,10 +253,12 @@ export default function InvoicePrinter({
                     lineHeight: '1.3',
                 }}
             >
-                {/* ─── Date: City ─── */}
-                <div className="absolute" style={{ ...POS.dateCity, ...(debug ? { outline: '1px dashed red', background: 'rgba(255,0,0,0.06)' } : {}) }}>
-                    Naranjal
-                </div>
+                {/* ─── Date: City (solo si el papel no la trae fija) ─── */}
+                {!hideCityLabel && (
+                    <div className="absolute" style={{ ...POS.dateCity, ...(debug ? { outline: '1px dashed red', background: 'rgba(255,0,0,0.06)' } : {}) }}>
+                        Naranjal
+                    </div>
+                )}
 
                 {/* ─── Date: Day ─── */}
                 <div className="absolute text-center" style={{ ...POS.dateDay, width: '1.5cm', ...(debug ? { outline: '1px dashed red', background: 'rgba(255,0,0,0.06)' } : {}) }}>
@@ -489,10 +493,10 @@ export default function InvoicePrinter({
 
 // Layout calibrado para Cezemer Tornería (papel 22cm x 22cm, sin columna 5%)
 export const CEZEMER_LAYOUT: typeof DEFAULT_POS = {
-    dateCity:       { top: '3.2cm',  left: '2.5cm' },
-    dateDay:        { top: '3.2cm',  left: '11.8cm' },
-    dateMonth:      { top: '3.2cm',  left: '13.5cm' },
-    dateYear:       { top: '3.2cm',  left: '17cm' },
+    dateCity:       { top: '3.2cm',  left: '2.5cm' }, // sin uso (hideCityLabel)
+    dateDay:        { top: '4.2cm',  left: '5.8cm' },
+    dateMonth:      { top: '4.2cm',  left: '7.5cm' },
+    dateYear:       { top: '4.2cm',  left: '11cm' },
 
     clientName:     { top: '4.6cm',  left: '2.5cm' },
     clientRuc:      { top: '4.6cm',  left: '15.5cm' },
@@ -505,16 +509,16 @@ export const CEZEMER_LAYOUT: typeof DEFAULT_POS = {
 
     itemsStart:     { top: '7.6cm',  left: '0.3cm' },
 
-    totalLetras:    { top: '17.6cm', left: '2.0cm' },
+    totalLetras:    { top: '16.1cm', left: '2.0cm' },
 
     subtotalExent:  { top: '18.5cm', left: '17.5cm' },
-    subtotalIva5:   { top: '18.5cm', left: '17.5cm' }, // sin uso en este formulario
-    subtotalIva10:  { top: '18.9cm', left: '17.5cm' },
+    subtotalIva5:   { top: '18.5cm', left: '17.5cm' },
+    subtotalIva10:  { top: '16.1cm', left: '17.5cm' },
 
     descuento:      { top: '19.3cm', left: '17.5cm' },
-    totalNumerico:  { top: '20.1cm', left: '17.5cm' },
+    totalNumerico:  { top: '18.1cm', left: '17.5cm' },
 
-    liqIva5:        { top: '20.6cm', left: '5cm' },   // sin uso
+    liqIva5:        { top: '20.6cm', left: '5cm' },
     totalIva:       { top: '20.6cm', left: '11cm' },
     liqIva10:       { top: '20.6cm', left: '8cm' },
 };

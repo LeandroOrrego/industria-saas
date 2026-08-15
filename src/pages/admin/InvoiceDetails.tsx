@@ -416,6 +416,7 @@ export default function InvoiceDetails() {
                                 : undefined
                         }
                         hideVat5Column={invoice.organizations?.name?.toLowerCase().includes('cezemer')}
+                        hideCityLabel={invoice.organizations?.name?.toLowerCase().includes('cezemer')}
                         pageWidth={invoice.organizations?.name?.toLowerCase().includes('cezemer') ? '22cm' : '21.5cm'}
                         pageHeight={invoice.organizations?.name?.toLowerCase().includes('cezemer') ? '22cm' : '21cm'}
                     />
