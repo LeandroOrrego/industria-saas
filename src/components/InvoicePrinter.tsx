@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Printer, Bug, Wrench, List } from 'lucide-react';
 import { numberToText } from '../utils/numberToText';
 
@@ -117,6 +117,52 @@ export default function InvoicePrinter({
     const [debug, setDebug] = useState(false);
     const [mode, setMode] = useState<'detail' | 'machine'>('detail');
 
+    const printRef = useRef<HTMLDivElement>(null);
+
+    const handleIsolatedPrint = () => {
+        const printContent = printRef.current;
+        if (!printContent) return;
+
+        const printWindow = window.open('', '_blank', 'width=900,height=900');
+        if (!printWindow) {
+            alert('El navegador bloqueó la ventana de impresión. Permití pop-ups para este sitio e intentá de nuevo.');
+            return;
+        }
+
+        // Copiar todos los estilos (Tailwind incluido) del documento actual
+        const existingStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+            .map(el => el.outerHTML)
+            .join('\n');
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Factura</title>
+                    ${existingStyles}
+                    <style>
+                        @page { size: ${pageWidth} ${pageHeight}; margin: 0; }
+                        html, body {
+                            margin: 0;
+                            padding: 0;
+                            width: ${pageWidth};
+                            height: ${pageHeight};
+                            background: white;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printContent.outerHTML}
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
+    };
+
     const allLines = linesProp ?? invoice.lines ?? [];
     const date = invoice.created_at ? new Date(invoice.created_at) : new Date();
     const total = invoice.total_amount ?? 0;
@@ -186,7 +232,7 @@ export default function InvoicePrinter({
 
                 {/* Print button */}
                 <button
-                    onClick={() => window.print()}
+                    onClick={handleIsolatedPrint}
                     className="bg-cobalt-600 hover:bg-cobalt-500 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg shadow-cobalt-900/20"
                 >
                     <Printer size={18} /> Imprimir
@@ -195,6 +241,7 @@ export default function InvoicePrinter({
 
             {/* ═══════ Print Area ═══════ */}
             <div
+                ref={printRef}
                 className="invoice-printer-page bg-white text-black mx-auto relative overflow-hidden shadow-xl print:shadow-none"
                 style={{
                     width: pageWidth,
