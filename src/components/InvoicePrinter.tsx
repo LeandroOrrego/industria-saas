@@ -408,8 +408,8 @@ export default function InvoicePrinter({
                         position: absolute;
                         top: 0;
                         left: 0;
-                        width: 21.5cm !important;
-                        height: 21cm !important;
+                        width: ${pageWidth} !important;
+                        height: ${pageHeight} !important;
                         box-shadow: none !important;
                         overflow: hidden;
                     }
