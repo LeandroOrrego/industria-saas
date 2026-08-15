@@ -194,13 +194,15 @@ export default function InvoiceDetails() {
 
             {/* Invoice Document Container */}
             <div
-                className={`bg-white text-black mx-auto min-h-[297mm] relative shadow-xl print:shadow-none print:w-full overflow-hidden ${isPrePrinted ? 'print:border-none' : 'p-8 rounded-none'
+                className={`bg-white text-black mx-auto relative shadow-xl print:shadow-none print:w-full overflow-hidden ${isPrePrinted ? 'print:border-none' : 'p-8 rounded-none min-h-[297mm]'
                     }`}
-                style={{
-                    width: '210mm',
-                    paddingTop: isPrePrinted ? `${marginTop}mm` : undefined,
-                    paddingLeft: isPrePrinted ? `${marginLeft}mm` : undefined,
-                }}
+                style={
+                    isPrePrinted
+                        ? {} // InvoicePrinter maneja su propio tamaño y posiciones
+                        : {
+                            width: '210mm',
+                        }
+                }
             >
                 {!isPrePrinted ? (
                     // --- STANDARD DESIGN (Industria_65 Style) ---

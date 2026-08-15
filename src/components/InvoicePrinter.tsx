@@ -351,10 +351,12 @@ export default function InvoicePrinter({
                     {totalExempt > 0 ? fmt(totalExempt) : ''}
                 </div>
 
-                {/* ─── Subtotal IVA 5% ─── */}
-                <div className="absolute text-right" style={{ ...POS.subtotalIva5, width: '2cm', ...(debug ? { outline: '1px dashed red', background: 'rgba(255,0,0,0.06)' } : {}) }}>
-                    {totalIva5 > 0 ? fmt(totalIva5) : ''}
-                </div>
+                {/* ─── Subtotal IVA 5% (oculta en formularios sin columna 5%) ─── */}
+                {!hideVat5Column && (
+                    <div className="absolute text-right" style={{ ...POS.subtotalIva5, width: '2cm', ...(debug ? { outline: '1px dashed red', background: 'rgba(255,0,0,0.06)' } : {}) }}>
+                        {totalIva5 > 0 ? fmt(totalIva5) : ''}
+                    </div>
+                )}
 
                 {/* ─── Subtotal IVA 10% ─── */}
                 <div className="absolute text-right" style={{ ...POS.subtotalIva10, width: '2.5cm', ...(debug ? { outline: '1px dashed red', background: 'rgba(255,0,0,0.06)' } : {}) }}>
@@ -366,10 +368,12 @@ export default function InvoicePrinter({
                     {fmt(total)}
                 </div>
 
-                {/* ─── Liquidación IVA 5% ─── */}
-                <div className="absolute text-right" style={{ ...POS.liqIva5, width: '2.5cm', ...(debug ? { outline: '1px dashed red', background: 'rgba(255,0,0,0.06)' } : {}) }}>
-                    {liqIva5 > 0 ? fmt(liqIva5) : '0'}
-                </div>
+                {/* ─── Liquidación IVA 5% (oculta en formularios sin columna 5%) ─── */}
+                {!hideVat5Column && (
+                    <div className="absolute text-right" style={{ ...POS.liqIva5, width: '2.5cm', ...(debug ? { outline: '1px dashed red', background: 'rgba(255,0,0,0.06)' } : {}) }}>
+                        {liqIva5 > 0 ? fmt(liqIva5) : '0'}
+                    </div>
+                )}
 
                 {/* ─── Liquidación IVA 10% ─── */}
                 <div className="absolute text-right" style={{ ...POS.liqIva10, width: '2.5cm', ...(debug ? { outline: '1px dashed red', background: 'rgba(255,0,0,0.06)' } : {}) }}>
