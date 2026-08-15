@@ -398,16 +398,22 @@ export default function InvoicePrinter({
                         padding: 0 !important;
                     }
 
-                    /* Page size for pre-printed form */
                     @page {
                         size: ${pageWidth} ${pageHeight};
                         margin: 0;
                     }
 
-                    /* Hide UI elements completely so they don't take up space */
-                    .print\\:hidden {
-                        display: none !important;
+                    /* Ocultar TODO el resto de la app (sidebar, header, etc) */
+                    body * {
+                        visibility: hidden;
                     }
+
+                    /* Pero mostrar nuestro documento de factura y sus hijos */
+                    .invoice-printer-page,
+                    .invoice-printer-page * {
+                        visibility: visible;
+                    }
+
                     .invoice-printer-page {
                         position: absolute;
                         top: 0;
@@ -416,6 +422,11 @@ export default function InvoicePrinter({
                         height: ${pageHeight} !important;
                         box-shadow: none !important;
                         overflow: hidden;
+                    }
+
+                    /* Ocultar explícitamente los elementos marcados como print:hidden */
+                    .print\\:hidden {
+                        display: none !important;
                     }
 
                     /* Hide debug outlines in actual print */
