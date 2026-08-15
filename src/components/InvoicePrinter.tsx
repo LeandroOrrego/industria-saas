@@ -404,13 +404,9 @@ export default function InvoicePrinter({
                         margin: 0;
                     }
 
-                    /* Hide everything except the print area */
-                    body * {
-                        visibility: hidden;
-                    }
-                    .invoice-printer-page,
-                    .invoice-printer-page * {
-                        visibility: visible;
+                    /* Hide UI elements completely so they don't take up space */
+                    .print\\:hidden {
+                        display: none !important;
                     }
                     .invoice-printer-page {
                         position: absolute;
