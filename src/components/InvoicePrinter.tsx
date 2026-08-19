@@ -375,7 +375,7 @@ export default function InvoicePrinter({
                                         </div>
 
                                         {/* 10% (si el form no tiene columna 5%, todo lo gravado cae acá) */}
-                                        <div className="absolute text-right" style={{ left: '16.0cm', width: '2.8cm' }}>
+                                        <div className="absolute text-right" style={{ left: '17.0cm', width: '2.8cm' }}>
                                             {vatRate !== 0 ? fmt(subtotal) : ''}
                                         </div>
                                     </div>
