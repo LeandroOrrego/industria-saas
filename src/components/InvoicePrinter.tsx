@@ -64,38 +64,38 @@ const MONTHS_ES = [
 
 export const DEFAULT_POS = {
     // Header
-    dateCity:       { top: '3.2cm',  left: '2.5cm' },
-    dateDay:        { top: '3.2cm',  left: '11.8cm' },
-    dateMonth:      { top: '3.2cm',  left: '13.5cm' },
-    dateYear:       { top: '3.2cm',  left: '17cm' },
+    dateCity: { top: '3.2cm', left: '2.5cm' },
+    dateDay: { top: '3.2cm', left: '11.8cm' },
+    dateMonth: { top: '3.2cm', left: '13.5cm' },
+    dateYear: { top: '3.2cm', left: '17cm' },
 
     // Client info
-    clientName:     { top: '4.5cm',  left: '2.0cm' },
-    clientRuc:      { top: '4.5cm',  left: '14.5cm' },
-    clientAddress:  { top: '5.2cm',  left: '2.0cm' },
-    clientPhone:    { top: '5.2cm',  left: '14.5cm' },
-    clientRemision: { top: '5.9cm',  left: '5cm' },
+    clientName: { top: '4.5cm', left: '2.0cm' },
+    clientRuc: { top: '4.5cm', left: '14.5cm' },
+    clientAddress: { top: '5.2cm', left: '2.0cm' },
+    clientPhone: { top: '5.2cm', left: '14.5cm' },
+    clientRemision: { top: '5.9cm', left: '5cm' },
 
     // Condición Venta (X marks)
-    condContado:    { top: '5.9cm',  left: '16cm' },
-    condCredito:    { top: '5.9cm',  left: '18.8cm' },
+    condContado: { top: '5.9cm', left: '16cm' },
+    condCredito: { top: '5.9cm', left: '18.8cm' },
 
     // Items table
-    itemsStart:     { top: '7.5cm',  left: '0.3cm' },
+    itemsStart: { top: '7.5cm', left: '0.3cm' },
 
     // Footer
-    totalLetras:    { top: '16.7cm', left: '3.5cm' },
+    totalLetras: { top: '16.7cm', left: '3.5cm' },
 
-    subtotalExent:  { top: '17.3cm', left: '13.2cm' },
-    subtotalIva5:   { top: '17.3cm', left: '15.4cm' },
-    subtotalIva10:  { top: '17.3cm', left: '17.5cm' },
+    subtotalExent: { top: '17.3cm', left: '13.2cm' },
+    subtotalIva5: { top: '17.3cm', left: '15.4cm' },
+    subtotalIva10: { top: '17.3cm', left: '17.5cm' },
 
-    descuento:      { top: '17.8cm', left: '17.5cm' },
-    totalNumerico:  { top: '18.8cm', left: '17.5cm' },
+    descuento: { top: '17.8cm', left: '17.5cm' },
+    totalNumerico: { top: '18.8cm', left: '17.5cm' },
 
-    liqIva5:        { top: '19.2cm', left: '5cm' },
-    totalIva:       { top: '19.2cm', left: '11cm' },
-    liqIva10:       { top: '19.2cm', left: '8cm' },
+    liqIva5: { top: '19.2cm', left: '5cm' },
+    totalIva: { top: '19.2cm', left: '11cm' },
+    liqIva10: { top: '19.2cm', left: '8cm' },
 };
 
 
@@ -178,10 +178,10 @@ export default function InvoicePrinter({
             .reduce((s, l) => s + l.quantity * l.unit_price, 0);
 
     const totalExempt = sumByVat(0);
-    const totalIva5   = sumByVat(5);
-    const totalIva10  = sumByVat(10);
+    const totalIva5 = sumByVat(5);
+    const totalIva10 = sumByVat(10);
 
-    const liqIva5  = totalIva5 > 0 ? Math.round(totalIva5 / 21) : 0;
+    const liqIva5 = totalIva5 > 0 ? Math.round(totalIva5 / 21) : 0;
     const liqIva10 = totalIva10 > 0 ? Math.round(totalIva10 / 11) : 0;
     const totalIva = liqIva5 + liqIva10;
 
@@ -198,21 +198,19 @@ export default function InvoicePrinter({
                 <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-zinc-700">
                     <button
                         onClick={() => setMode('detail')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-colors ${
-                            mode === 'detail'
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-colors ${mode === 'detail'
                                 ? 'bg-cobalt-600 text-white'
                                 : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'
-                        }`}
+                            }`}
                     >
                         <List size={14} /> Detalle
                     </button>
                     <button
                         onClick={() => setMode('machine')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-colors ${
-                            mode === 'machine'
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-colors ${mode === 'machine'
                                 ? 'bg-cobalt-600 text-white'
                                 : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'
-                        }`}
+                            }`}
                     >
                         <Wrench size={14} /> Máquina
                     </button>
@@ -221,11 +219,10 @@ export default function InvoicePrinter({
                 {/* Debug toggle */}
                 <button
                     onClick={() => setDebug(!debug)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
-                        debug
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${debug
                             ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700'
                             : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-500 border-gray-300 dark:border-zinc-700 hover:text-gray-700 dark:hover:text-zinc-300'
-                    }`}
+                        }`}
                 >
                     <Bug size={14} /> {debug ? 'Debug ON' : 'Debug'}
                 </button>
@@ -519,32 +516,32 @@ export default function InvoicePrinter({
 
 // Layout calibrado para Cezemer Tornería (papel 22cm x 22cm, sin columna 5%)
 export const CEZEMER_LAYOUT: typeof DEFAULT_POS = {
-    dateCity:       { top: '3.2cm',  left: '2.5cm' }, // sin uso (hideCityLabel)
-    dateDay:        { top: '5.2cm',  left: '5.5cm' },
-    dateMonth:      { top: '5.2cm',  left: '7.7cm' },
-    dateYear:       { top: '5.2cm',  left: '14.3cm' },
+    dateCity: { top: '3.2cm', left: '2.5cm' }, // sin uso (hideCityLabel)
+    dateDay: { top: '5.2cm', left: '5.5cm' },
+    dateMonth: { top: '5.2cm', left: '7.7cm' },
+    dateYear: { top: '5.2cm', left: '14.3cm' },
 
-    clientName:     { top: '6cm',  left: '2.7cm' },
-    clientRuc:      { top: '6cm',  left: '15.5cm' },
-    clientAddress:  { top: '6.7cm',  left: '2.5cm' }, // ⚠️ pendiente de confirmar
-    clientPhone:    { top: '6.7cm',  left: '15.5cm' }, // ⚠️ pendiente de confirmar
-    clientRemision: { top: '6.6cm',  left: '5cm' },
+    clientName: { top: '5.8cm', left: '2.7cm' },
+    clientRuc: { top: '5.8cm', left: '15.5cm' },
+    clientAddress: { top: '6.6cm', left: '2.5cm' }, // ⚠️ pendiente de confirmar
+    clientPhone: { top: '6.6cm', left: '15.5cm' }, // ⚠️ pendiente de confirmar
+    clientRemision: { top: '7.6cm', left: '5cm' },
 
-    condContado:    { top: '7.5cm',  left: '17.7cm' },
-    condCredito:    { top: '7.3cm',  left: '18.5cm' }, // ⚠️ aún sin verificar con factura real a crédito
+    condContado: { top: '7.3cm', left: '18cm' },
+    condCredito: { top: '7.3cm', left: '22cm' }, // ⚠️ aún sin verificar con factura real a crédito
 
-    itemsStart:     { top: '9.2cm',  left: '1.3cm' },
+    itemsStart: { top: '9.2cm', left: '1.3cm' },
 
-    totalLetras:    { top: '17.5cm', left: '4.0cm' },
+    totalLetras: { top: '17.5cm', left: '4.0cm' },
 
-    subtotalExent:  { top: '17.5cm', left: '17.5cm' },
-    subtotalIva5:   { top: '17.9cm', left: '17.5cm' },
-    subtotalIva10:  { top: '17.9cm', left: '17.5cm' },
+    subtotalExent: { top: '17.5cm', left: '17.5cm' },
+    subtotalIva5: { top: '17.5cm', left: '17.5cm' },
+    subtotalIva10: { top: '17.5cm', left: '17.5cm' },
 
-    descuento:      { top: '18.1cm', left: '17.5cm' },
-    totalNumerico:  { top: '19.5cm', left: '17.5cm' },
+    descuento: { top: '18.1cm', left: '17.5cm' },
+    totalNumerico: { top: '19.5cm', left: '17.5cm' },
 
-    liqIva5:        { top: '19.1cm', left: '3.0cm' },
-    totalIva:       { top: '19.1cm', left: '10.5cm' },
-    liqIva10:       { top: '19.1cm', left: '6.0cm' },
+    liqIva5: { top: '19.1cm', left: '3.0cm' },
+    totalIva: { top: '19.1cm', left: '10.5cm' },
+    liqIva10: { top: '19.1cm', left: '6.0cm' },
 };
