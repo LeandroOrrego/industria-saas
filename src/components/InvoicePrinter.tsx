@@ -360,22 +360,22 @@ export default function InvoicePrinter({
                                         </div>
 
                                         {/* Descripción */}
-                                        <div className="absolute overflow-hidden whitespace-nowrap text-ellipsis uppercase" style={{ left: '3.0cm', width: '10cm' }}>
+                                        <div className="absolute overflow-hidden whitespace-nowrap text-ellipsis uppercase" style={{ left: '3.0cm', width: '6cm' }}>
                                             {line.description}
                                         </div>
 
                                         {/* Precio Unitario */}
-                                        <div className="absolute text-right" style={{ left: '13.5cm', width: '2.5cm' }}>
+                                        <div className="absolute text-right" style={{ left: '9.2cm', width: '2.5cm' }}>
                                             {fmt(line.unit_price)}
                                         </div>
 
                                         {/* Exentas */}
-                                        <div className="absolute text-right" style={{ left: '15.5cm', width: '1.8cm' }}>
+                                        <div className="absolute text-right" style={{ left: '13.0cm', width: '1.8cm' }}>
                                             {vatRate === 0 ? fmt(subtotal) : ''}
                                         </div>
 
                                         {/* 10% (si el form no tiene columna 5%, todo lo gravado cae acá) */}
-                                        <div className="absolute text-right" style={{ left: hideVat5Column ? '17.3cm' : '17.5cm', width: '2.8cm' }}>
+                                        <div className="absolute text-right" style={{ left: '15.0cm', width: '2.8cm' }}>
                                             {vatRate !== 0 ? fmt(subtotal) : ''}
                                         </div>
                                     </div>
