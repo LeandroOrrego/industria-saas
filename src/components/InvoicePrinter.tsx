@@ -520,31 +520,31 @@ export default function InvoicePrinter({
 // Layout calibrado para Cezemer Tornería (papel 22cm x 22cm, sin columna 5%)
 export const CEZEMER_LAYOUT: typeof DEFAULT_POS = {
     dateCity:       { top: '3.2cm',  left: '2.5cm' }, // sin uso (hideCityLabel)
-    dateDay:        { top: '4.8cm',  left: '5.8cm' },
-    dateMonth:      { top: '4.8cm',  left: '7.5cm' },
-    dateYear:       { top: '4.8cm',  left: '15.0cm' },
+    dateDay:        { top: '5.2cm',  left: '5.5cm' },
+    dateMonth:      { top: '5.2cm',  left: '7.7cm' },
+    dateYear:       { top: '5.2cm',  left: '14.3cm' },
 
-    clientName:     { top: '5.2cm',  left: '2.5cm' },
-    clientRuc:      { top: '5.2cm',  left: '15.5cm' },
-    clientAddress:  { top: '5.9cm',  left: '2.5cm' },
-    clientPhone:    { top: '5.9cm',  left: '15.5cm' },
+    clientName:     { top: '5.7cm',  left: '2.7cm' },
+    clientRuc:      { top: '5.7cm',  left: '16.0cm' },
+    clientAddress:  { top: '7.0cm',  left: '2.5cm' }, // 
+    clientPhone:    { top: '7.0cm',  left: '15.5cm' }, // 
     clientRemision: { top: '6.6cm',  left: '5cm' },
 
-    condContado:    { top: '6.9cm',  left: '18.0cm' },
-    condCredito:    { top: '6.9cm',  left: '19.4cm' },
+    condContado:    { top: '7.5cm',  left: '17.7cm' },
+    condCredito:    { top: '7.5cm',  left: '19.1cm' }, // ⚠️ aún sin verificar con factura real a crédito
 
-    itemsStart:     { top: '9.1cm',  left: '1.3cm' },
+    itemsStart:     { top: '9.2cm',  left: '1.3cm' },
 
-    totalLetras:    { top: '17.3cm', left: '4.0cm' },
+    totalLetras:    { top: '17.8cm', left: '4.0cm' },
 
-    subtotalExent:  { top: '16.9cm', left: '17.5cm' },
-    subtotalIva5:   { top: '16.9cm', left: '17.5cm' },
-    subtotalIva10:  { top: '16.9cm', left: '17.5cm' },
+    subtotalExent:  { top: '17.9cm', left: '17.5cm' },
+    subtotalIva5:   { top: '17.9cm', left: '17.5cm' },
+    subtotalIva10:  { top: '17.9cm', left: '17.5cm' },
 
     descuento:      { top: '18.1cm', left: '17.5cm' },
-    totalNumerico:  { top: '19.3cm', left: '17.5cm' },
+    totalNumerico:  { top: '19.8cm', left: '17.5cm' },
 
-    liqIva5:        { top: '18.6cm', left: '3.0cm' },
-    totalIva:       { top: '18.6cm', left: '11cm' },
-    liqIva10:       { top: '18.6cm', left: '6.0cm' },
+    liqIva5:        { top: '19.1cm', left: '3.0cm' },
+    totalIva:       { top: '19.1cm', left: '10.5cm' },
+    liqIva10:       { top: '19.1cm', left: '6.0cm' },
 };
