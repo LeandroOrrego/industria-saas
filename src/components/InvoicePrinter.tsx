@@ -184,8 +184,13 @@ export default function InvoicePrinter({
     const linesSubtotal = totalExempt + totalIva5 + totalIva10;
     const discount = Math.max(linesSubtotal - total, 0);
 
-    const liqIva5 = totalIva5 > 0 ? Math.round(totalIva5 / 21) : 0;
-    const liqIva10 = totalIva10 > 0 ? Math.round(totalIva10 / 11) : 0;
+    // Prorratear el descuento proporcionalmente entre las categorías de IVA
+    const discountRatio = linesSubtotal > 0 ? discount / linesSubtotal : 0;
+    const netIva5  = totalIva5  * (1 - discountRatio);
+    const netIva10 = totalIva10 * (1 - discountRatio);
+
+    const liqIva5  = netIva5  > 0 ? Math.round(netIva5 / 21) : 0;
+    const liqIva10 = netIva10 > 0 ? Math.round(netIva10 / 11) : 0;
     const totalIva = liqIva5 + liqIva10;
 
 
