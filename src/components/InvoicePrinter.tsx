@@ -181,6 +181,9 @@ export default function InvoicePrinter({
     const totalIva5 = sumByVat(5);
     const totalIva10 = sumByVat(10);
 
+    const linesSubtotal = totalExempt + totalIva5 + totalIva10;
+    const discount = Math.max(linesSubtotal - total, 0);
+
     const liqIva5 = totalIva5 > 0 ? Math.round(totalIva5 / 21) : 0;
     const liqIva10 = totalIva10 > 0 ? Math.round(totalIva10 / 11) : 0;
     const totalIva = liqIva5 + liqIva10;
@@ -436,6 +439,13 @@ export default function InvoicePrinter({
                 <div className="absolute text-right" style={{ ...POS.subtotalIva10, width: '2.5cm', ...(debug ? { outline: '1px dashed red', background: 'rgba(255,0,0,0.06)' } : {}) }}>
                     {fmt(totalIva10 || total)}
                 </div>
+
+                {/* ─── Descuento ─── */}
+                {discount > 0 && (
+                    <div className="absolute text-right" style={{ ...POS.descuento, width: '3cm', ...(debug ? { outline: '1px dashed red', background: 'rgba(255,0,0,0.06)' } : {}) }}>
+                        {fmt(discount)}
+                    </div>
+                )}
 
                 {/* ─── Total Numérico ─── */}
                 <div className="absolute text-right font-bold" style={{ ...POS.totalNumerico, width: '3cm', fontSize: '12px', ...(debug ? { outline: '1px dashed red', background: 'rgba(255,0,0,0.06)' } : {}) }}>
