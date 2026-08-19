@@ -253,6 +253,32 @@ export default function InvoicePrinter({
                     lineHeight: '1.3',
                 }}
             >
+                {/* ═══════ RULER (solo visible con Debug ON) ═══════ */}
+                {debug && (
+                    <>
+                        {/* Regla horizontal (arriba) */}
+                        {Array.from({ length: 23 }).map((_, cm) => (
+                            <div
+                                key={`h-${cm}`}
+                                className="absolute text-[8px] text-blue-600 font-bold"
+                                style={{ top: '0.1cm', left: `${cm}cm`, borderLeft: '1px solid blue', height: '0.3cm', paddingLeft: '1px' }}
+                            >
+                                {cm}
+                            </div>
+                        ))}
+                        {/* Regla vertical (izquierda) */}
+                        {Array.from({ length: 23 }).map((_, cm) => (
+                            <div
+                                key={`v-${cm}`}
+                                className="absolute text-[8px] text-blue-600 font-bold"
+                                style={{ top: `${cm}cm`, left: '0.1cm', borderTop: '1px solid blue', width: '0.3cm' }}
+                            >
+                                {cm}
+                            </div>
+                        ))}
+                    </>
+                )}
+
                 {/* ─── Date: City (solo si el papel no la trae fija) ─── */}
                 {!hideCityLabel && (
                     <div className="absolute" style={{ ...POS.dateCity, ...(debug ? { outline: '1px dashed red', background: 'rgba(255,0,0,0.06)' } : {}) }}>
