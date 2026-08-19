@@ -199,8 +199,8 @@ export default function InvoicePrinter({
                     <button
                         onClick={() => setMode('detail')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-colors ${mode === 'detail'
-                                ? 'bg-cobalt-600 text-white'
-                                : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'
+                            ? 'bg-cobalt-600 text-white'
+                            : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'
                             }`}
                     >
                         <List size={14} /> Detalle
@@ -208,8 +208,8 @@ export default function InvoicePrinter({
                     <button
                         onClick={() => setMode('machine')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-colors ${mode === 'machine'
-                                ? 'bg-cobalt-600 text-white'
-                                : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'
+                            ? 'bg-cobalt-600 text-white'
+                            : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'
                             }`}
                     >
                         <Wrench size={14} /> Máquina
@@ -220,8 +220,8 @@ export default function InvoicePrinter({
                 <button
                     onClick={() => setDebug(!debug)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${debug
-                            ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700'
-                            : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-500 border-gray-300 dark:border-zinc-700 hover:text-gray-700 dark:hover:text-zinc-300'
+                        ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700'
+                        : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-500 border-gray-300 dark:border-zinc-700 hover:text-gray-700 dark:hover:text-zinc-300'
                         }`}
                 >
                     <Bug size={14} /> {debug ? 'Debug ON' : 'Debug'}
@@ -365,7 +365,7 @@ export default function InvoicePrinter({
                                         </div>
 
                                         {/* Precio Unitario */}
-                                        <div className="absolute text-right" style={{ left: '9.2cm', width: '2.5cm' }}>
+                                        <div className="absolute text-right" style={{ left: '12.2cm', width: '2.5cm' }}>
                                             {fmt(line.unit_price)}
                                         </div>
 
@@ -375,7 +375,7 @@ export default function InvoicePrinter({
                                         </div>
 
                                         {/* 10% (si el form no tiene columna 5%, todo lo gravado cae acá) */}
-                                        <div className="absolute text-right" style={{ left: '15.0cm', width: '2.8cm' }}>
+                                        <div className="absolute text-right" style={{ left: '18.0cm', width: '2.8cm' }}>
                                             {vatRate !== 0 ? fmt(subtotal) : ''}
                                         </div>
                                     </div>
