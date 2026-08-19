@@ -524,25 +524,25 @@ export const CEZEMER_LAYOUT: typeof DEFAULT_POS = {
     dateMonth:      { top: '5.2cm',  left: '7.7cm' },
     dateYear:       { top: '5.2cm',  left: '14.3cm' },
 
-    clientName:     { top: '5.7cm',  left: '2.7cm' },
-    clientRuc:      { top: '5.7cm',  left: '16.0cm' },
-    clientAddress:  { top: '7.0cm',  left: '2.5cm' }, // 
-    clientPhone:    { top: '7.0cm',  left: '15.5cm' }, // 
+    clientName:     { top: '6cm',  left: '2.7cm' },
+    clientRuc:      { top: '6cm',  left: '15.5cm' },
+    clientAddress:  { top: '6.7cm',  left: '2.5cm' }, // ⚠️ pendiente de confirmar
+    clientPhone:    { top: '6.7cm',  left: '15.5cm' }, // ⚠️ pendiente de confirmar
     clientRemision: { top: '6.6cm',  left: '5cm' },
 
     condContado:    { top: '7.5cm',  left: '17.7cm' },
-    condCredito:    { top: '7.5cm',  left: '19.1cm' }, // ⚠️ aún sin verificar con factura real a crédito
+    condCredito:    { top: '7.3cm',  left: '18.5cm' }, // ⚠️ aún sin verificar con factura real a crédito
 
     itemsStart:     { top: '9.2cm',  left: '1.3cm' },
 
-    totalLetras:    { top: '17.8cm', left: '4.0cm' },
+    totalLetras:    { top: '17.5cm', left: '4.0cm' },
 
-    subtotalExent:  { top: '17.9cm', left: '17.5cm' },
+    subtotalExent:  { top: '17.5cm', left: '17.5cm' },
     subtotalIva5:   { top: '17.9cm', left: '17.5cm' },
     subtotalIva10:  { top: '17.9cm', left: '17.5cm' },
 
     descuento:      { top: '18.1cm', left: '17.5cm' },
-    totalNumerico:  { top: '19.8cm', left: '17.5cm' },
+    totalNumerico:  { top: '19.5cm', left: '17.5cm' },
 
     liqIva5:        { top: '19.1cm', left: '3.0cm' },
     totalIva:       { top: '19.1cm', left: '10.5cm' },
