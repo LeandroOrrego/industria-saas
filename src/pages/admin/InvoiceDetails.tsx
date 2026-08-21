@@ -93,6 +93,101 @@ export default function InvoiceDetails() {
     };
 
     const formatCurrency = (amount: number) => {
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { ArrowLeft, Printer, FileText, Download, DollarSign } from 'lucide-react';
+import { numberToText } from '../../utils/numberToText';
+import RegisterPaymentModal from '../../components/RegisterPaymentModal';
+import InvoicePrinter, { CEZEMER_LAYOUT } from '../../components/InvoicePrinter';
+
+export default function InvoiceDetails() {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const [invoice, setInvoice] = useState<any>(null);
+    const [lines, setLines] = useState<any[]>([]);
+    const [payments, setPayments] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (id) {
+            fetchInvoiceDetails();
+        }
+    }, [id]);
+
+    async function fetchInvoiceDetails() {
+        try {
+            // Fetch Header + Org Settings
+            const { data: invData, error: invError } = await supabase
+                .from('invoices')
+                .select('*, clients(*), organizations(*)') // Fetch Org Settings
+                .eq('id', id)
+                .single();
+
+            if (invError) throw invError;
+            setInvoice(invData);
+
+            // Set default margins from Org Settings
+            if (invData.organizations) {
+                setMarginTop(invData.organizations.print_margin_top || 0);
+                setMarginLeft(invData.organizations.print_margin_left || 0);
+            }
+
+            // Fetch Lines
+            const { data: linesData, error: linesError } = await supabase
+                .from('invoice_lines')
+                .select('*')
+                .eq('invoice_id', id);
+
+            if (linesError) throw linesError;
+            setLines(linesData || []);
+
+            // Fetch Payments
+            const { data: paymentsData, error: paymentsError } = await supabase
+                .from('payments')
+                .select('*')
+                .eq('invoice_id', id)
+                .order('payment_date', { ascending: true });
+
+            if (paymentsError) throw paymentsError;
+            setPayments(paymentsData || []);
+
+        } catch (error) {
+            console.error('Error fetching invoice:', error);
+            alert('Error al cargar la factura');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    // Print Calibration State
+    const [isPrePrinted, setIsPrePrinted] = useState(false);
+    const [marginTop, setMarginTop] = useState(0);
+    const [marginLeft, setMarginLeft] = useState(0);
+    const [copyLabel, setCopyLabel] = useState('ORIGINAL');
+
+    const handleUpdateMargins = async () => {
+        if (!invoice?.organization_id) return;
+        try {
+            await supabase.from('organizations').update({
+                print_margin_top: marginTop,
+                print_margin_left: marginLeft
+            }).eq('id', invoice.organization_id);
+            alert('Márgenes guardados como predeterminados');
+        } catch (error) {
+            console.error(error);
+            alert('Error al guardar márgenes');
+        }
+    };
+
+    // Payment Modal
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+    const handlePaymentSuccess = () => {
+        fetchInvoiceDetails(); // Refresh to update balance/status
+    };
+
+    const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('es-PY').format(amount);
     };
 
@@ -102,6 +197,9 @@ export default function InvoiceDetails() {
     // DEBUG: Re-enable numberToText
     const totalInWords = numberToText(invoice.total_amount || 0);
     // const totalInWords = 'PRUEBA (SAFE MODE)';
+
+    const CEZEMER_ORG_ID = '585cc60a-8146-4821-9a3a-2765538f938a';
+    const isCezemer = invoice.organization_id === CEZEMER_ORG_ID;
 
     return (
         <div className="p-6 max-w-5xl mx-auto bg-gray-50 dark:bg-zinc-950 min-h-screen text-gray-900 dark:text-zinc-100 font-sans print:bg-white print:text-black print:p-0">
@@ -410,15 +508,11 @@ export default function InvoiceDetails() {
                                 vat_rate: l.vat_rate ?? 10,
                             })),
                         }}
-                        layout={
-                            invoice.organizations?.name?.toLowerCase().includes('cezemer')
-                                ? CEZEMER_LAYOUT
-                                : undefined
-                        }
-                        hideVat5Column={invoice.organizations?.name?.toLowerCase().includes('cezemer')}
-                        hideCityLabel={invoice.organizations?.name?.toLowerCase().includes('cezemer')}
-                        pageWidth={invoice.organizations?.name?.toLowerCase().includes('cezemer') ? '22cm' : '21.5cm'}
-                        pageHeight={invoice.organizations?.name?.toLowerCase().includes('cezemer') ? '22cm' : '21cm'}
+                        layout={isCezemer ? CEZEMER_LAYOUT : undefined}
+                        hideVat5Column={isCezemer}
+                        hideCityLabel={isCezemer}
+                        pageWidth={isCezemer ? '22cm' : '21.5cm'}
+                        pageHeight={isCezemer ? '22cm' : '21cm'}
                     />
                 )}
             </div>
