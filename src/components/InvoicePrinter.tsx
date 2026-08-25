@@ -186,10 +186,10 @@ export default function InvoicePrinter({
 
     // Prorratear el descuento proporcionalmente entre las categorías de IVA
     const discountRatio = linesSubtotal > 0 ? discount / linesSubtotal : 0;
-    const netIva5  = totalIva5  * (1 - discountRatio);
+    const netIva5 = totalIva5 * (1 - discountRatio);
     const netIva10 = totalIva10 * (1 - discountRatio);
 
-    const liqIva5  = netIva5  > 0 ? Math.round(netIva5 / 21) : 0;
+    const liqIva5 = netIva5 > 0 ? Math.round(netIva5 / 21) : 0;
     const liqIva10 = netIva10 > 0 ? Math.round(netIva10 / 11) : 0;
     const totalIva = liqIva5 + liqIva10;
 
@@ -373,7 +373,7 @@ export default function InvoicePrinter({
                                         </div>
 
                                         {/* Precio Unitario */}
-                                        <div className="absolute text-right" style={{ left: '12.2cm', width: '2.5cm' }}>
+                                        <div className="absolute text-right" style={{ left: '12.2cm', width: '2cm' }}>
                                             {fmt(line.unit_price)}
                                         </div>
 
@@ -542,21 +542,21 @@ export const CEZEMER_LAYOUT: typeof DEFAULT_POS = {
     clientPhone: { top: '6.6cm', left: '15.5cm' }, // ⚠️ pendiente de confirmar
     clientRemision: { top: '7.6cm', left: '5cm' },
 
-    condContado: { top: '7.3cm', left: '18cm' },
-    condCredito: { top: '7.3cm', left: '22cm' }, // ⚠️ aún sin verificar con factura real a crédito
+    condContado: { top: '7.2cm', left: '17cm' },
+    condCredito: { top: '7.2cm', left: '19cm' }, // ⚠️ aún sin verificar con factura real a crédito
 
     itemsStart: { top: '9.2cm', left: '1.3cm' },
 
-    totalLetras: { top: '17.5cm', left: '4.0cm' },
+    totalLetras: { top: '16.5cm', left: '4.0cm' },
 
-    subtotalExent: { top: '17.5cm', left: '17.5cm' },
-    subtotalIva5: { top: '17.5cm', left: '17.5cm' },
-    subtotalIva10: { top: '17.5cm', left: '17.5cm' },
+    subtotalExent: { top: '16.5cm', left: '17.5cm' },
+    subtotalIva5: { top: '16.5cm', left: '17.5cm' },
+    subtotalIva10: { top: '16.5cm', left: '17.5cm' },
 
-    descuento: { top: '18.1cm', left: '17.5cm' },
-    totalNumerico: { top: '19.5cm', left: '17.5cm' },
+    descuento: { top: '17.9cm', left: '17.5cm' },
+    totalNumerico: { top: '19.cm', left: '17.5cm' },
 
-    liqIva5: { top: '19.1cm', left: '3.0cm' },
-    totalIva: { top: '19.1cm', left: '10.5cm' },
-    liqIva10: { top: '19.1cm', left: '6.0cm' },
+    liqIva5: { top: '18.3cm', left: '3.0cm' },
+    totalIva: { top: '18.3cm', left: '9.5cm' },
+    liqIva10: { top: '18.3cm', left: '5.cm' },
 };
